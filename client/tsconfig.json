@@ -13,7 +13,16 @@
     "jsx": "preserve",
     "incremental": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@api/*": ["./src/api/*"],
+      "@abi/*": ["./src/abi/*"],
+      "@lib/*": ["./src/lib/*"],
+      "@state/*": ["./src/state/*"],
+      "@Components/*": ["./src/components/*"],
+      "@Svg/*": ["./src/svg/*"],
+      "@public/*": ["./public/*"],
+      "@utils/*": ["./utils/*"],
+      "@providers/*": ["./src/providers/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
