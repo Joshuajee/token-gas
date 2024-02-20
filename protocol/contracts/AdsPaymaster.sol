@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/access/Ownable.sol";
-
-
+import {IPaymaster} from "@account-abstraction/contracts/interfaces/IPaymaster.sol";
 // Uncomment this line to use console.log
-// import "hardhat/console.sol";
+import "hardhat/console.sol";
 
-contract Relayer is Ownable {
+contract AdsPaymaster is Ownable, IPaymaster {
 
     error ZeroValueError();
     error CallerNotExecutor();
@@ -57,12 +56,34 @@ contract Relayer is Ownable {
         
         if (gasPrice > _campaign.maxPayPerView) revert GasPriceExceededMaxPayPerView(gasPrice, _campaign.maxPayPerView);
         
-        (bool success, ) =  _destination.call(data);
+
+        (bool success, bytes memory _data) =  _destination.delegatecall(data);
+
+        console.log(success);
+
+        console.logBytes(_data);
+
+        // assembly {
+        //     CALLCODE();
+        // }
+
+        //console.log(abi.decode(_data, (address)));
+
+        //if (!success) revert("RRRR");
 
         payable(msg.sender).call{value: payment};
 
         emit ExecuteOrder(_campaignId, payment, _campaign.balance);
 
+    }
+
+
+    function encodeWithSignature(
+        address to,
+        uint amount
+    ) external pure returns (bytes memory) {
+        // Typo is not checked - "transfer(address, uint)"
+        return abi.encodeWithSignature("transfer(address,uint256)", to, amount);
     }
 
 
@@ -80,6 +101,12 @@ contract Relayer is Ownable {
         if (!executor[msg.sender]) revert CallerNotExecutor();
         _;
     }
+
+    fallback() external {
+        console.log("NP");
+    }
+
+    receive() payable external {}
 
 
 }
