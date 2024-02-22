@@ -11,8 +11,14 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 
 
 
-abstract contract TokenVault {
+abstract contract TokenVault is ERC20 {
 
+    constructor(string memory _name, string memory _symbol) ERC20(_name, _symbol) {}
+
+
+    function deposit() external payable {
+        
+    }
 
    
 

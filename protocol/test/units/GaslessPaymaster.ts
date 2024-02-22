@@ -3,16 +3,26 @@ import { expect } from "chai";
 import hre, { viem } from "hardhat";
 import { checksumAddress, parseEther } from "viem";
 import { IDomain, createPermit} from "../../scripts/helper";
+import { deployPriceAggregator } from "../../scripts/mockHelper";
 
 describe("GaslessPaymaster ", function () {
 
     async function deploy() {
+
         const publicClient = await viem.getPublicClient()
+
         const [user1, user2, user3, user4] = await hre.viem.getWalletClients();
+
+        const priceAggregator = await deployPriceAggregator()
+
         const mockERC20WithPermit = await hre.viem.deployContract("MockERC20WithPermit", ["mockUSDC", "mockUSDC"])
-        const GaslessPaymaster = await hre.viem.deployContract("GaslessPaymaster", [mockERC20WithPermit.address])
+
+        const GaslessPaymaster = await hre.viem.deployContract("GaslessPaymaster", [
+            mockERC20WithPermit.address, mockERC20WithPermit.address,
+            priceAggregator.bnbPriceFeeds.address, priceAggregator.usdcPriceFeeds.address
+        ])
         
-        return {GaslessPaymaster, publicClient, mockERC20WithPermit, user1, user2, user3, user4}
+        return {GaslessPaymaster, publicClient, mockERC20WithPermit, ...priceAggregator, user1, user2, user3, user4}
     }
 
 
@@ -86,7 +96,16 @@ describe("GaslessPaymaster ", function () {
                 signatures.s
             ]
 
-            await GaslessPaymaster.write.transfer([permitData, user3.account.address])
+            const transferData: any = [
+                user3.account.address,
+                user1.account.address,
+                100000000000n,
+                28,
+                signatures.r,
+                signatures.s
+            ]
+
+            await GaslessPaymaster.write.transfer([permitData, transferData])
 
             // Recipient Balance should be equal to amount before after
             expect(await mockERC20WithPermit.read.balanceOf([user3.account.address])).to.be.equal(amount)
