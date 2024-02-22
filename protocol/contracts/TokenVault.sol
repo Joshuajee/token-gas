@@ -11,15 +11,60 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 
 
 
-abstract contract TokenVault is ERC20 {
-
-    constructor(string memory _name, string memory _symbol) ERC20(_name, _symbol) {}
-
-
-    function deposit() external payable {
-        
-    }
+abstract contract TokenVault is ERC4626 {
 
    
+    constructor(IERC20 _token) 
+        ERC4626(_token)
+        ERC20(string.concat("LGP-", ERC20(address(_token)).name()), string.concat("LGP-", ERC20(address(_token)).symbol()))  {
+
+    }
+
+    function deposit(address receiver) external payable {
+        super.deposit(msg.value, receiver);
+    }
+
+
+    /**
+     * Overrides this function to work with native Tokens
+     * @param caller msg.sender
+     * @param receiver the address to receive shares
+     * @param assets msg.value
+     * @param shares shares to mint to the receiver
+     */
+
+    function _deposit(address caller, address receiver, uint256 assets, uint256 shares) internal override {
+
+        _mint(receiver, shares);
+
+        emit Deposit(caller, receiver, assets, shares);
+    }
+
+
+    /**
+     * Overrides this function to work with native Tokens
+     * @param caller msg.sender
+     * @param receiver receipient
+     * @param owner owner of the LP token
+     * @param assets amount of assets to withdraw
+     * @param shares amount of shares to burn
+     */
+
+
+    function _withdraw(address caller, address receiver, address owner, uint256 assets,uint256 shares) internal override {
+        if (caller != owner) {
+            _spendAllowance(owner, caller, shares);
+        }
+
+        _burn(owner, shares);
+
+        emit Withdraw(caller, receiver, owner, assets, shares);
+    }
+ 
+
+
+
+
+
 
 }
