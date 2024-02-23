@@ -41,8 +41,6 @@ export const calculatePrice = async (amount: bigint, baseCurrencyAddress: Addres
     const basePrice = await baseCurrency.read.latestAnswer()
     const quotePrice = await quoteCurrency.read.latestAnswer()
 
-    console.log("Ca", (basePrice ))
-
     return (basePrice * amount / quotePrice) 
 }
 

@@ -18,9 +18,12 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard {
 
     error CallerNotPaidEnoughGas(uint gasRequired);
     error TransactionUnderPriced(uint gasCostInToken, uint maxFee);
+    error BnbTransferFailed();
+    error TransferFailed();
+
 
     event Transaction(address indexed sender, address indexed recipient, uint amount);
-    event Fulfilled(address indexed caller, uint gasPrice,  uint feeAmount, uint gasCostInTokens, uint feeAmountInTokens);
+    event Fulfilled(address indexed caller, address indexed from, address indexed refundAddress, uint gasPrice,  uint feeAmount, uint gasCostInTokens, uint feeAmountInTokens);
 
     using SafeERC20 for IERC20;
           
@@ -64,7 +67,7 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard {
 
 
     // do constant offset for gas
-    uint32 constant public GAS_USED_OFFSET = 100000;
+    uint32 constant public GAS_USED_OFFSET = 110000;
     // fee for transaction caller
     uint32 public callerFeeAmountInEther = 1000; 
     uint public poolFeeAmountInToken = 0.01 ether; 
@@ -198,15 +201,33 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard {
         ///@dev Transfer Everything to protocol
         token.safeTransferFrom(from, address(this), maxFee);
 
-        emit Fulfilled(caller, gasPrice, callerFee, gasCostInToken, poolFee);
+        emit Fulfilled(caller, from, refundAddress, gasPrice, callerFee, gasCostInToken, poolFee);
 
     }
 
+    function getFundShare(uint assets) view public returns (uint amountInTokens, uint amountInBnb) {
 
-    // Overrides
+        // withdraw tokens first before bnb
+        uint tokenBalance = token.balanceOf(address(this));
+
+        uint tokenBalanceInBnb = tokenBalance * getBnbQuote() / DECIMAL;
+
+        if (tokenBalanceInBnb > 0) {
+            if (tokenBalanceInBnb >= assets) {
+                amountInTokens = assets * getTokenQuote() / DECIMAL;
+            } else {
+                amountInTokens = tokenBalanceInBnb * getTokenQuote() / DECIMAL;
+                amountInBnb = assets - tokenBalanceInBnb;
+            }
+        } else {
+            amountInBnb = assets;
+        }
+    
+    }
 
     /**
      * Overrides display asset in the Underlying token
+     * @dev
      */
 
     function totalAssets() public view override returns (uint256) {
@@ -217,12 +238,37 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard {
 
 
     /**
-     * override this to give the correct decimal offset
+     * Overrides this function to work with native Tokens
+     * @param caller msg.sender
+     * @param receiver receipient
+     * @param owner owner of the LP token
+     * @param assets amount of assets to withdraw
+     * @param shares amount of shares to burn
      */
+    
+    function _withdraw(address caller, address receiver, address owner, uint256 assets, uint256 shares) internal override {
+        
+        if (caller != owner) {
+            _spendAllowance(owner, caller, shares);
+        }
 
-    function _decimalsOffset() internal view override returns (uint8) {
-        return ERC20(address(token)).decimals();
+        _burn(owner, shares);
+
+        (uint amountInTokens, uint amountInBnb) = getFundShare(assets);
+
+        if (amountInTokens > 0) {
+            token.safeTransfer(receiver, amountInTokens);
+        }
+
+        if (amountInBnb > 0) {
+            (bool success,) = payable(receiver).call{value: amountInTokens}("");
+            if (!success) revert TransferFailed();
+        }
+
+        emit Withdraw(caller, receiver, owner, assets, shares);
     }
+
+
 
 
 }

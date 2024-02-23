@@ -21,8 +21,15 @@ describe("GaslessPaymaster ", function () {
             mockERC20WithPermit.address, mockERC20WithPermit.address,
             priceAggregator.bnbPriceFeeds.address, priceAggregator.usdcPriceFeeds.address
         ])
+
+        const domain : IDomain = {
+            name: await mockERC20WithPermit.read.name(),
+            version: "1",
+            verifyingContract: mockERC20WithPermit.address,
+            chainId: 31337
+        }
         
-        return {GaslessPaymaster, publicClient, mockERC20WithPermit, ...priceAggregator, user1, user2, user3, user4}
+        return {GaslessPaymaster, publicClient, domain, mockERC20WithPermit, ...priceAggregator, user1, user2, user3, user4}
     }
 
 
@@ -34,6 +41,82 @@ describe("GaslessPaymaster ", function () {
 
         await deployed.GaslessPaymaster.write.deposit([deployed.user1.account.address],{value});
         
+        return { ...deployed, value }
+    }
+
+
+    async function transfer(deployed: any) {
+
+        const {GaslessPaymaster, publicClient, domain, mockERC20WithPermit, user1, user3 }  = deployed 
+
+        const value = parseEther("1", "wei") as any
+
+        await deployed.GaslessPaymaster.write.deposit([deployed.user1.account.address],{value});
+                
+        const caller = user1
+
+        const nonces =  await mockERC20WithPermit.read.nonces([user1.account.address])
+
+        const amount = parseEther("1", "wei")
+
+        const maxFee = 751384861899n
+
+        const amountWithFee = amount + maxFee
+
+        const deadline = BigInt("10000000000999")
+
+        const balance = await mockERC20WithPermit.read.balanceOf([user1.account.address])
+
+        const signatures = await createPermit(
+            user1.account.address, 
+            GaslessPaymaster.address, 
+            (amount + maxFee).toString(),
+            nonces.toString(), 
+            deadline.toString(), 
+            domain
+        )
+        
+        // Recipient Balance should be equal to zero before Transfer
+        const recipientBalInitial = await mockERC20WithPermit.read.balanceOf([user3.account.address])
+
+        const initialTokenBalOfProtocol = await mockERC20WithPermit.read.balanceOf([GaslessPaymaster.address]);
+
+        const permitData: any = [
+            user1.account.address,
+            amount + maxFee,
+            deadline,
+            signatures.v,
+            signatures.r,
+            signatures.s
+        ]
+
+        const transferData: any = [
+            user3.account.address,
+            user1.account.address,
+            amount,
+            maxFee,
+            28,
+            signatures.r,
+            signatures.s
+        ]
+
+        const callerInitialBalance = await publicClient.getBalance({address: caller.account.address})
+
+        await GaslessPaymaster.write.transfer([permitData, transferData])
+
+        // Recipient Balance should be equal to amount before after
+        expect(await mockERC20WithPermit.read.balanceOf([user3.account.address])).to.be.equal(recipientBalInitial + amount)
+
+        // Amount sent should be deducted from Sender Balance
+        expect(await mockERC20WithPermit.read.balanceOf([user1.account.address])).to.be.equal(balance - amountWithFee)
+
+        //
+        expect(Number(await publicClient.getBalance({address: user1.account.address}) - callerInitialBalance)).to.be.gt(Number(await GaslessPaymaster.read.callerFeeAmountInEther()))
+        
+        // check if the contract received the fee
+        expect(await mockERC20WithPermit.read.balanceOf([GaslessPaymaster.address])).to.be.equal(initialTokenBalOfProtocol + maxFee)
+    
+
         return { ...deployed }
     }
 
@@ -81,22 +164,15 @@ describe("GaslessPaymaster ", function () {
 
         it("should be able to transfer tokens", async ( ) => {
 
-            const { GaslessPaymaster, publicClient, user1, user2, user3, mockERC20WithPermit } = await loadFixture(deployAndSupplyLiquidity)
+            const { GaslessPaymaster, publicClient, user1, user2, user3, domain, mockERC20WithPermit } = await loadFixture(deployAndSupplyLiquidity)
 
             const caller = user1
 
             const nonces =  await mockERC20WithPermit.read.nonces([user1.account.address])
 
-            const domain : IDomain = {
-                name: await mockERC20WithPermit.read.name(),
-                version: "1",
-                verifyingContract: mockERC20WithPermit.address,
-                chainId: 31337
-            }
-
             const amount = parseEther("1", "wei")
 
-            const maxFee = 651384861899n
+            const maxFee = 751384861899n
 
             const amountWithFee = amount + maxFee
 
@@ -138,7 +214,7 @@ describe("GaslessPaymaster ", function () {
 
             const callerInitialBalance = await publicClient.getBalance({address: caller.account.address})
 
-            const result = await GaslessPaymaster.write.transfer([permitData, transferData])
+            await GaslessPaymaster.write.transfer([permitData, transferData])
 
             // Recipient Balance should be equal to amount before after
             expect(await mockERC20WithPermit.read.balanceOf([user3.account.address])).to.be.equal(amount)
@@ -155,6 +231,103 @@ describe("GaslessPaymaster ", function () {
             console.log(await GaslessPaymaster.read.totalAssets())
         })
         
+
+
+        it("Fundes in Liquidity Pool Should Increase with Each Transfer Grow", async ( ) => {
+
+            const deployed = await loadFixture(deployAndSupplyLiquidity)
+
+            await transfer(deployed)
+
+            console.log(await deployed.GaslessPaymaster.read.totalAssets())
+
+            await transfer(deployed)
+
+            console.log(await deployed.GaslessPaymaster.read.totalAssets())
+
+            await transfer(deployed)
+
+            console.log(await deployed.GaslessPaymaster.read.totalAssets())
+
+            await transfer(deployed)
+
+            console.log(await deployed.GaslessPaymaster.read.totalAssets())
+
+            await transfer(deployed)
+
+            console.log(await deployed.GaslessPaymaster.read.totalAssets())
+        })
+    })
+
+
+    describe("Withdrawals",  function () {
+
+        it("Should be able to correctly estimate Withdrawals", async () => {
+
+            const deployed = await loadFixture(deployAndSupplyLiquidity)
+
+            expect(await deployed.GaslessPaymaster.read.getFundShare([deployed.value])).to.deep.equal([
+                0n, deployed.value
+            ])
+
+            await transfer(deployed)
+
+            const contractUSDBal = (await deployed.mockERC20WithPermit.read.balanceOf([deployed.GaslessPaymaster.address]))
+
+            const smallAmount = parseEther("0.0001", "wei")
+
+            expect(await deployed.GaslessPaymaster.read.getFundShare([smallAmount])).to.deep.equal([
+                await calculatePrice(smallAmount, deployed.usdcPriceFeeds.address, deployed.bnbPriceFeeds.address), 0n
+            ])
+
+            expect(await deployed.GaslessPaymaster.read.getFundShare([deployed.value])).to.deep.equal([
+                contractUSDBal - 1n, (deployed.value - await calculatePrice(contractUSDBal, deployed.bnbPriceFeeds.address, deployed.usdcPriceFeeds.address))
+            ])
+
+        })
+
+        it("Should be able to withdraw BNB", async ( ) => {
+
+            const deployed = await loadFixture(deployAndSupplyLiquidity)
+
+            console.log(await deployed.GaslessPaymaster.read.balanceOf([deployed.user1.account.address]))
+    
+
+            await deployed.GaslessPaymaster.write.withdraw([
+                deployed.value / 2n, 
+                deployed.user2.account.address, 
+                deployed.user1.account.address
+            ])
+
+            console.log(await deployed.GaslessPaymaster.read.balanceOf([deployed.user1.account.address]))
+    
+        
+        })
+
+
+
+        // it("Should be able to withdraw BNB", async ( ) => {
+
+        //     const deployed = await loadFixture(deployAndSupplyLiquidity)
+
+        //     await deployed.GaslessPaymaster.write.withdraw([deployed.value, deployed.user2.account.address])
+
+        //     await transfer(deployed)
+
+        //     const contractUSDBal = (await deployed.mockERC20WithPermit.read.balanceOf([deployed.GaslessPaymaster.address]))
+
+        //     const smallAmount = parseEther("0.0001", "wei")
+
+        //     expect(await deployed.GaslessPaymaster.read.getFundShare([smallAmount])).to.deep.equal([
+        //         await calculatePrice(smallAmount, deployed.usdcPriceFeeds.address, deployed.bnbPriceFeeds.address), 0n
+        //     ])
+
+        //     expect(await deployed.GaslessPaymaster.read.getFundShare([deployed.value])).to.deep.equal([
+        //         contractUSDBal - 1n, (deployed.value - await calculatePrice(contractUSDBal, deployed.bnbPriceFeeds.address, deployed.usdcPriceFeeds.address))
+        //     ])
+            
+        // })
+
     })
 
 });

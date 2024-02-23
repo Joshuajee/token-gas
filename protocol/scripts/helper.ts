@@ -37,6 +37,47 @@ export async function createPermit(owner: Address, spender: Address, value: Stri
         message: permit
     }
 
+    return await signWithSignature(owner, dataToSign)
+
+}
+
+
+
+export async function createPermitTransfer(owner: Address, spender: Address, value: String, nonce: String, deadline: String, domain: IDomain) {
+
+    const permit = { owner, spender, value, nonce, deadline }
+
+    const Permit = [
+      { name: "owner", type: "address" },
+      { name: "spender", type: "address" },
+      { name: "value", type: "uint256" },
+      { name: "nonce", type: "uint256" },
+      { name: "deadline", type: "uint256" },
+    ]
+
+    const domainType = [
+        { name: 'name', type: 'string' },
+        { name: 'version', type: 'string' },
+        { name: 'chainId', type: 'uint256' },
+        { name: 'verifyingContract', type: 'address' },
+    ]
+
+    const dataToSign : any = {
+        types: {
+            EIP712Domain: domainType,
+            Permit: Permit
+        },
+        domain: domain,
+        primaryType: "Permit",
+        message: permit
+    }
+
+    return await signWithSignature(owner, dataToSign)
+
+}
+
+const signWithSignature = async (owner: Address, dataToSign: any) => {
+
     const signature =  await (await viem.getWalletClient(owner)).signTypedData(dataToSign)
 
     const pureSig = signature.replace("0x", "")
@@ -51,7 +92,6 @@ export async function createPermit(owner: Address, spender: Address, value: Stri
         v: parseInt(v.toString()), 
         signature
     }
-
 }
 
 export const setSigner = async (account: Address) => {
