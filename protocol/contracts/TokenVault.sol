@@ -20,6 +20,11 @@ abstract contract TokenVault is ERC4626 {
 
     }
 
+    /**
+     * Deposit BNB to the liqudity pool
+     * @param receiver // the lp address
+     */
+
     function deposit(address receiver) external payable {
         super.deposit(msg.value, receiver);
     }
@@ -41,30 +46,15 @@ abstract contract TokenVault is ERC4626 {
     }
 
 
+
     /**
-     * Overrides this function to work with native Tokens
-     * @param caller msg.sender
-     * @param receiver receipient
-     * @param owner owner of the LP token
-     * @param assets amount of assets to withdraw
-     * @param shares amount of shares to burn
+     * override this to give the correct decimal offset
      */
 
-
-    function _withdraw(address caller, address receiver, address owner, uint256 assets,uint256 shares) internal override {
-        if (caller != owner) {
-            _spendAllowance(owner, caller, shares);
-        }
-
-        _burn(owner, shares);
-
-        emit Withdraw(caller, receiver, owner, assets, shares);
+    function _decimalsOffset() internal view override returns (uint8) {
+        return ERC20(address(asset())).decimals();
     }
- 
-
-
-
-
 
 
 }
+

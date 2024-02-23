@@ -25,14 +25,6 @@ export async function deployPriceAggregator() {
 }
 
 
-
-export async function deployTokens() {
-
-    const gho = await viem.deployContract("MockERC20", ["gho", "gho"])
-
-    return { gho }
-}
-
 export const calculatePrice = async (amount: bigint, baseCurrencyAddress: Address, quoteCurrencyAddress: Address) => {
     
     const baseCurrency =  await viem.getContractAt("MockV3Aggregator", baseCurrencyAddress)
@@ -40,8 +32,6 @@ export const calculatePrice = async (amount: bigint, baseCurrencyAddress: Addres
 
     const basePrice = await baseCurrency.read.latestAnswer()
     const quotePrice = await quoteCurrency.read.latestAnswer()
-
-    console.log("Ca", (basePrice ))
 
     return (basePrice * amount / quotePrice) 
 }
