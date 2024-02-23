@@ -4,6 +4,7 @@ import { WagmiProvider, createConfig, http } from "wagmi";
 import { bscTestnet, localhost } from "wagmi/chains";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
+import { fallback } from "viem";
 
 const config = createConfig(
   getDefaultConfig({
@@ -11,12 +12,16 @@ const config = createConfig(
     chains: [localhost, bscTestnet],
     transports: {
       // RPC URL for each chain
-      [bscTestnet.id]: http(
-        `https://go.getblock.io/9d50c51d7b8744e1bba0dded3cdb360f`,
-      ),
-      [localhost.id]: http(
-        `http://127.0.0.1:8545`,
-      ),
+      [bscTestnet.id]: fallback([
+        http(
+          `https://go.getblock.io/fa9c3b8a855d4dd5b786ece5594b8190`,
+        ),
+      ]),
+      [localhost.id]: fallback([
+        http(
+          `http://127.0.0.1:8545`,
+        )
+      ])
     },
 
     // Required API Keys

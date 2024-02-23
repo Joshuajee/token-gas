@@ -19,9 +19,9 @@ import Link from 'next/link'
 
 export default function Nav() {
     return (
-        <div className='h-[10%] max-h-[100px] flex  justify-between  items-center px-10'>
+        <div className='h-[10%] max-h-[100px] flex  justify-between  items-center px-10 shadow-sm'>
             <div className='flex gap-3 items-center'>
-                <h1 className='font-semibold text-xl'>AdPay</h1>
+                <Link href="/"> <h1 className='font-semibold text-xl'>TokenGas</h1></Link>
 
 
             </div>
