@@ -43,16 +43,16 @@ export async function createPermit(owner: Address, spender: Address, value: Stri
 
 
 
-export async function createPermitTransfer(owner: Address, spender: Address, value: String, nonce: String, deadline: String, domain: IDomain) {
+export async function createTransferPermit(owner: Address, to: Address, refundAddress: Address, value: String, nonce: String, maxFee: String, domain: IDomain) {
 
-    const permit = { owner, spender, value, nonce, deadline }
+    const permit = { to, refundAddress, amount: value, nonce, maxFee }
 
     const Permit = [
-      { name: "owner", type: "address" },
-      { name: "spender", type: "address" },
-      { name: "value", type: "uint256" },
+      { name: "to", type: "address" },
+      { name: "refundAddress", type: "address" },
+      { name: "amount", type: "uint256" },
+      { name: "maxFee", type: "uint256" },
       { name: "nonce", type: "uint256" },
-      { name: "deadline", type: "uint256" },
     ]
 
     const domainType = [

@@ -6,6 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {Nonces} from "@openzeppelin/contracts/utils/Nonces.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
@@ -14,7 +16,20 @@ import "./TokenVault.sol";
 import "hardhat/console.sol";
 
 
-contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard {
+contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712, Nonces {
+
+    bytes32 private constant TRANSFER_PERMIT_TYPEHASH =
+        keccak256("Permit(address to,address refundAddress,uint256 amount,uint256 maxFee,uint256 nonce)");
+
+
+    bytes32 private constant SWAP_PERMIT_TYPEHASH =
+        keccak256("Permit(address to,address refundAddress,uint256 amount,uint256 maxFee,uint256 nonce)");
+
+    /**
+     * @dev Mismatched signature.
+     */
+    error ERC2612InvalidSigner(address signer, address owner);
+
 
     error CallerNotPaidEnoughGas(uint gasRequired);
     error TransactionUnderPriced(uint gasCostInToken, uint maxFee);
@@ -75,8 +90,7 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard {
     uint constant public DECIMAL = 1 ether;
 
 
-
-    constructor(IERC20 _token, ISwapRouter _router, address _bnbPriceFeeds, address _tokenPriceFeeds) Ownable(msg.sender) TokenVault(_token) {
+    constructor(IERC20 _token, ISwapRouter _router, address _bnbPriceFeeds, address _tokenPriceFeeds) Ownable(msg.sender) TokenVault(_token) EIP712(string.concat("LGP-", ERC20(address(_token)).name()), "1") {
         
         token = _token;
 
@@ -99,6 +113,7 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard {
 
         address caller = msg.sender;
 
+        //ERC20 Permit
         ERC20Permit(address(token)).permit(
             from, 
             address(this),
@@ -108,6 +123,10 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard {
             permitData.r,
             permitData.s
         );
+
+        bytes32 structHash = keccak256(abi.encode(TRANSFER_PERMIT_TYPEHASH, transferData.to, transferData.refundAddress, transferData.amount, transferData.maxFee, _useNonce(from)));
+
+        _verifySignature(from, structHash, transferData.v, transferData.r, transferData.s);
 
         token.safeTransferFrom(from, transferData.to, amount);
 
@@ -205,6 +224,19 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard {
 
     }
 
+
+    function _verifySignature(address _owner, bytes32 structHash, uint8 v, bytes32 r, bytes32 s) internal view {
+        
+        bytes32 hash = _hashTypedDataV4(structHash);
+
+        address signer = ECDSA.recover(hash, v, r, s);
+
+        if (signer != _owner) {
+            revert ERC2612InvalidSigner(signer, _owner);
+        }
+
+    }
+
     function getFundShare(uint assets) view public returns (uint amountInTokens, uint amountInBnb) {
 
         // withdraw tokens first before bnb
@@ -267,8 +299,6 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard {
 
         emit Withdraw(caller, receiver, owner, assets, shares);
     }
-
-
 
 
 }
