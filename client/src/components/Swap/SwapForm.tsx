@@ -174,11 +174,7 @@ export default function SwapForm() {
                 </Form>
 
             </CardContent>
-            <CardFooter className="flex justify-between">
 
-                {/* <Button variant="outline">Cancel</Button>
-                <Button>Transfer</Button> */}
-            </CardFooter>
         </Card>
     )
 }

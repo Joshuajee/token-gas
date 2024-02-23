@@ -11,3 +11,7 @@ export const uniswapSchema = z.object({
   amtToPay: z.number().positive().gt(0, "Invalid amount entered "),
   amtToReceive: z.number().positive().gt(0, "Invalid amount entered "),
 });
+
+export const liquiditySchema = z.object({
+  amount: z.number().positive().gt(0, "Invalid amount entered "),
+});

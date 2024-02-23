@@ -44,9 +44,9 @@ export default function Nav() {
                             </Link>
                         </NavigationMenuItem>
                         <NavigationMenuItem>
-                            <Link href="/sponsor" legacyBehavior passHref>
+                            <Link href="/liquidity" legacyBehavior passHref>
                                 <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                                    Sponsors
+                                    Liquidity
                                 </NavigationMenuLink>
                             </Link>
                         </NavigationMenuItem>

@@ -132,11 +132,7 @@ export default function SendForm() {
                 </Form>
 
             </CardContent>
-            <CardFooter className="flex justify-between">
 
-                {/* <Button variant="outline">Cancel</Button>
-                <Button>Transfer</Button> */}
-            </CardFooter>
         </Card>
     )
 }
