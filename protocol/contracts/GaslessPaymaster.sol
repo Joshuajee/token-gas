@@ -10,16 +10,17 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
-
 import "./TokenVault.sol";
+import "hardhat/console.sol";
 
 
 contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard {
 
     error CallerNotPaidEnoughGas(uint gasRequired);
+    error TransactionUnderPriced(uint gasCostInToken, uint maxFee);
 
     event Transaction(address indexed sender, address indexed recipient, uint amount);
-    event Fulfilled(address indexed caller, uint gasPrice,  uint feeAmount, uint gasPriceInTokens, uint feeAmountInTokens);
+    event Fulfilled(address indexed caller, uint gasPrice,  uint feeAmount, uint gasCostInTokens, uint feeAmountInTokens);
 
     using SafeERC20 for IERC20;
           
@@ -36,6 +37,7 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard {
     struct TransferData {
         address to;
         address refundAddress;
+        uint256 amount;
         uint256 maxFee;
         uint8 v;
         bytes32 r;
@@ -61,14 +63,17 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard {
     AggregatorV3Interface public immutable tokenPriceFeeds;
 
 
-    uint public callerFeeAmountInEther = 10000000 wei; 
+    // do constant offset for gas
+    uint32 constant public GAS_USED_OFFSET = 100000;
+    // fee for transaction caller
+    uint32 public callerFeeAmountInEther = 1000; 
     uint public poolFeeAmountInToken = 0.01 ether; 
 
     uint constant public DECIMAL = 1 ether;
 
-    constructor(IERC20 _token, ISwapRouter _router, address _bnbPriceFeeds, address _tokenPriceFeeds) 
-        Ownable(msg.sender) 
-        TokenVault(string.concat("LGP-", ERC20(address(_token)).name()), string.concat("LGP-", ERC20(address(_token)).symbol())) {
+
+
+    constructor(IERC20 _token, ISwapRouter _router, address _bnbPriceFeeds, address _tokenPriceFeeds) Ownable(msg.sender) TokenVault(_token) {
         
         token = _token;
 
@@ -83,7 +88,9 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard {
 
     function transfer(ERC20PermitData calldata permitData, TransferData calldata transferData) external nonReentrant {
 
-        uint amount = permitData.value;
+        uint256 startingGas = gasleft();
+
+        uint amount = transferData.amount;
 
         address from = permitData.owner;
 
@@ -92,7 +99,7 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard {
         ERC20Permit(address(token)).permit(
             from, 
             address(this),
-            amount,
+            permitData.value,
             permitData.deadline,
             permitData.v,
             permitData.r,
@@ -101,13 +108,15 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard {
 
         token.safeTransferFrom(from, transferData.to, amount);
 
-        _payFees(caller, transferData.refundAddress, transferData.maxFee);
+        _payFees(caller, from, transferData.refundAddress, transferData.maxFee, startingGas);
 
         emit Transaction(from, transferData.to, amount);
 
     }
 
     function swapOnUNISWAP(ERC20PermitData calldata permitData, SwapData calldata swapData) external nonReentrant {
+
+        uint256 startingGas = gasleft();
 
         uint amount = permitData.value;
 
@@ -137,11 +146,12 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard {
             amountOutMinimum: swapData.amountOutMinimum
         }));
  
-        _payFees(caller, swapData.refundAddress, swapData.maxFee);
+        _payFees(caller, from, swapData.refundAddress, swapData.maxFee, startingGas);
 
     }
 
     /**
+     * Get token price quote e.g USDC/BNB or DAI/BNB
      * @dev no check for stall prices yet 
      */
     function getTokenQuote() public view returns (uint) {
@@ -151,26 +161,67 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard {
         return uint(tokenPrice * int(DECIMAL) / bnbPrice);
     }
 
+    /**
+     * Get token price quote e.g BNB/USDC or BNB/DAI
+     * @dev no check for stall prices yet 
+     */
+    function getBnbQuote() public view returns (uint) {
+        (, int256 bnbPrice,,,) = bnbPriceFeeds.latestRoundData();
+        (, int256 tokenPrice,,,) = tokenPriceFeeds.latestRoundData();
+        // multiply with decimal to prevent precision loss
+        return uint(bnbPrice * int(DECIMAL) / tokenPrice);
+    }
 
-    function _payFees(address caller, address refundAddress, uint maxFee) internal {
+
+    function _payFees(address caller, address from, address refundAddress, uint maxFee, uint startingGas) internal {
 
         uint gasPrice = tx.gasprice;
 
-        uint gasPriceInToken = gasPrice * getTokenQuote() / DECIMAL;
+        uint transactionCost = tx.gasprice * (GAS_USED_OFFSET + startingGas - gasleft());
+
+        uint gasCostInToken = transactionCost * getTokenQuote() / DECIMAL;
 
         uint callerFee = callerFeeAmountInEther;
 
         uint poolFee = poolFeeAmountInToken;
 
-        uint refund = gasPrice + callerFeeAmountInEther;
+        uint refund = transactionCost + callerFeeAmountInEther;
 
         // Refund the caller with the spend ether plus additional fee
-        (bool success, ) = payable(caller).call{value: refund}("0x");
+        (bool success, ) = payable(caller).call{value: refund}("");
 
         if (!success) revert CallerNotPaidEnoughGas(refund);
 
-        emit Fulfilled(caller, gasPrice, callerFee, gasPriceInToken, poolFee);
 
+        if (gasCostInToken > maxFee) revert TransactionUnderPriced(gasCostInToken, maxFee);
+
+        ///@dev Transfer Everything to protocol
+        token.safeTransferFrom(from, address(this), maxFee);
+
+        emit Fulfilled(caller, gasPrice, callerFee, gasCostInToken, poolFee);
+
+    }
+
+
+    // Overrides
+
+    /**
+     * Overrides display asset in the Underlying token
+     */
+
+    function totalAssets() public view override returns (uint256) {
+        uint tokenBalance = token.balanceOf(address(this));
+        uint bnbBalance = address(this).balance;
+        return (tokenBalance * getBnbQuote() / DECIMAL) + bnbBalance;
+    }
+
+
+    /**
+     * override this to give the correct decimal offset
+     */
+
+    function _decimalsOffset() internal view override returns (uint8) {
+        return ERC20(address(token)).decimals();
     }
 
 
