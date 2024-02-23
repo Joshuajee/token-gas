@@ -57,7 +57,10 @@ export default function Home() {
             </CardContent>
             <CardFooter className="flex flex-col justify-center gap-4">
               <p>UniSwap Interaction</p>
-              <Button>Interact</Button>
+              <Button asChild>
+                <Link href="/swap">Swap</Link>
+              </Button>
+
             </CardFooter>
           </Card>
           <Card className="w-1/4 py-3" >
@@ -69,7 +72,7 @@ export default function Home() {
             <CardFooter className="flex flex-col justify-center gap-4">
               <p>Token Interaction</p>
               <Button asChild>
-                <Link href="/send">Interact</Link>
+                <Link href="/transfer">Transfer</Link>
               </Button>
 
             </CardFooter>

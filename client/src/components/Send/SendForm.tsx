@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select"
 import { Button } from '../ui/button'
 import { erc20Schema } from '@/validators/transactions';
+import { PiCoinVerticalThin } from 'react-icons/pi';
 
 
 export default function SendForm() {
@@ -51,10 +52,15 @@ export default function SendForm() {
         console.log(values)
     }
     return (
-        <Card className="w-full max-w-[400px]">
+        <Card className="w-full max-w-[400px] shadow-md">
             <CardHeader>
-                <CardTitle>ERC20 Transaction</CardTitle>
-                <CardDescription>Send ERC20 and pay in ERC20</CardDescription>
+                <CardTitle className='text-center flex items-center justify-center gap-x-3'>
+                    <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-black">
+                        <PiCoinVerticalThin size={30} />
+                    </div>
+                    ERC20 Transaction
+                </CardTitle>
+                <CardDescription className='text-center'>Send ERC20 and pay in ERC20</CardDescription>
             </CardHeader>
             <CardContent>
 
@@ -73,7 +79,7 @@ export default function SendForm() {
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="usdt">USDT</SelectItem>
+                                            <SelectItem value="usdc">USDC</SelectItem>
 
                                         </SelectContent>
                                     </Select>
@@ -119,35 +125,12 @@ export default function SendForm() {
                         />
 
 
-                        <Button type="submit">Transfer</Button>
+                        <div className='flex w-full justify-end'>
+                            <Button type="submit">Transfer</Button>
+                        </div>
                     </form>
                 </Form>
-                {/* <form>
-                    <div className="grid w-full items-center gap-4">
-                        <div className="flex flex-col space-y-1.5">
-                            <Label htmlFor="framework">Token</Label>
-                            <Select>
-                                <SelectTrigger id="framework">
-                                    <SelectValue placeholder="Select" />
-                                </SelectTrigger>
-                                <SelectContent position="popper">
-                                    <SelectItem value="usdt">USDT</SelectItem>
 
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="flex flex-col space-y-1.5">
-                            <Label htmlFor="amt">Amount</Label>
-                            <Input type='number' id="amt" placeholder="0.0" />
-                        </div>
-                        <div className="flex flex-col space-y-1.5">
-                            <Label htmlFor="receiver">Receiver</Label>
-                            <Input id="receiver" placeholder="The address to receive the token" />
-                        </div>
-                        <small className='text-muted-foreground'>Gas estimate: 0.001 </small>
-
-                    </div>
-                </form> */}
             </CardContent>
             <CardFooter className="flex justify-between">
 

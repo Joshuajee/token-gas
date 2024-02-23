@@ -28,7 +28,7 @@ interface DataTableProps<TData, TValue> {
     data: TData[]
 }
 
-export function TransactionRecord<TData, TValue>({
+export function SwapTransactionRecord<TData, TValue>({
     columns,
     data,
 }: DataTableProps<TData, TValue>) {
@@ -50,7 +50,7 @@ export function TransactionRecord<TData, TValue>({
     })
 
     return (
-        <div className="h-full" id="transferrecord">
+        <div className="h-full" id="swaprecord">
 
             <div className="flex justify-between pb-4 h-[10%]">
                 <h2 className="text-3xl font-semibold">Transactions</h2>
