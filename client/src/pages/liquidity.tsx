@@ -4,7 +4,7 @@ import Nav from '@/components/ui/nav'
 import mydata from "@/lib/swapData.json"
 import { useState } from 'react'
 
-export default function liquidity() {
+export default function Liquidity() {
     //@ts-ignore
     const [data, setData] = useState<SwapTransaction[]>(mydata);
 

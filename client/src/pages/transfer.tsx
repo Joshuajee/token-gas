@@ -7,7 +7,7 @@ import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
 import { TbArrowBigDownLinesFilled } from 'react-icons/tb'
 
-export default function transfer() {
+export default function Transfer() {
     //@ts-ignore
     const [data, setData] = useState<Transaction[]>(mydata);
 

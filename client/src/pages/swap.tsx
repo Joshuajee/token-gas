@@ -8,7 +8,7 @@ import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
 import { TbArrowBigDownLinesFilled } from "react-icons/tb";
 
-export default function swap() {
+export default function Swap() {
     //@ts-ignore
     const [data, setData] = useState<SwapTransaction[]>(mydata);
 
