@@ -19,11 +19,11 @@ import "hardhat/console.sol";
 contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712, Nonces {
 
     bytes32 private constant TRANSFER_PERMIT_TYPEHASH =
-        keccak256("Permit(address to,address refundAddress,uint256 amount,uint256 maxFee,uint256 nonce)");
+        keccak256("Permit(address to,uint256 amount,uint256 maxFee,uint256 nonce)");
 
 
     bytes32 private constant SWAP_PERMIT_TYPEHASH =
-        keccak256("Permit(address to,address refundAddress,uint256 amount,uint256 maxFee,uint256 nonce)");
+        keccak256("Permit(address to,uint256 amount,uint256 maxFee,uint256 nonce)");
 
     /**
      * @dev Mismatched signature.
@@ -38,7 +38,7 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712, Nonce
 
 
     event Transaction(address indexed sender, address indexed recipient, uint amount);
-    event Fulfilled(address indexed caller, address indexed from, address indexed refundAddress, uint gasPrice,  uint feeAmount, uint gasCostInTokens, uint feeAmountInTokens);
+    event Fulfilled(address indexed caller, address indexed from, uint gasPrice, uint feeAmount, uint gasCostInTokens, uint feeAmountInTokens);
 
     using SafeERC20 for IERC20;
           
@@ -54,7 +54,6 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712, Nonce
 
     struct TransferData {
         address to;
-        address refundAddress;
         uint256 amount;
         uint256 maxFee;
         uint8 v;
@@ -65,7 +64,6 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712, Nonce
     struct SwapData {
         bytes path;
         address recipient;
-        address refundAddress;
         uint256 deadline;
         uint256 amountIn;
         uint256 amountOutMinimum;
@@ -129,13 +127,13 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712, Nonce
             permitData.s
         );
 
-        bytes32 structHash = keccak256(abi.encode(TRANSFER_PERMIT_TYPEHASH, transferData.to, transferData.refundAddress, transferData.amount, transferData.maxFee, _useNonce(from)));
+        bytes32 structHash = keccak256(abi.encode(TRANSFER_PERMIT_TYPEHASH, transferData.to, transferData.amount, transferData.maxFee, _useNonce(from)));
 
         _verifySignature(from, structHash, transferData.v, transferData.r, transferData.s);
 
         token.safeTransferFrom(from, transferData.to, amount);
 
-        _payFees(caller, from, transferData.refundAddress, transferData.maxFee, startingGas);
+        _payFees(caller, from, transferData.maxFee, startingGas);
 
         emit Transaction(from, transferData.to, amount);
 
@@ -173,7 +171,7 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712, Nonce
             amountOutMinimum: swapData.amountOutMinimum
         }));
  
-        _payFees(caller, from, swapData.refundAddress, swapData.maxFee, startingGas);
+        _payFees(caller, from, swapData.maxFee, startingGas);
 
     }
 
@@ -246,7 +244,7 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712, Nonce
     }
 
 
-    function _payFees(address caller, address from, address refundAddress, uint maxFee, uint startingGas) internal {
+    function _payFees(address caller, address from, uint maxFee, uint startingGas) internal {
 
         uint gasPrice = tx.gasprice;
 
@@ -277,7 +275,7 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712, Nonce
         ///@dev Transfer Everything to protocol
         token.safeTransferFrom(from, address(this), gasCostInToken);
 
-        emit Fulfilled(caller, from, refundAddress, gasPrice, callerFee, gasCostInToken, poolFee);
+        emit Fulfilled(caller, from, gasPrice, callerFee, gasCostInToken, poolFee);
 
     }
 
