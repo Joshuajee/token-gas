@@ -75,6 +75,11 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712, Nonce
         bytes32 s;
     }
 
+    enum TxType {
+        TRANSFER,
+        SWAP
+    }
+
     IERC20 immutable public token;
     ISwapRouter immutable public router;
     AggregatorV3Interface public immutable bnbPriceFeeds;
@@ -84,8 +89,8 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712, Nonce
     // do constant offset for gas
     uint32 constant public GAS_USED_OFFSET = 110000;
     // fee for transaction caller
-    uint32 public callerFeeAmountInEther = 1000; 
-    uint public poolFeeAmountInToken = 0.01 ether; 
+    uint public callerFeeAmountInEther = 1 gwei; 
+    uint public poolFeeAmountInToken = 1 gwei; 
 
     uint constant public DECIMAL = 1 ether;
 
@@ -195,47 +200,30 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712, Nonce
     }
 
 
-    function _payFees(address caller, address from, address refundAddress, uint maxFee, uint startingGas) internal {
-
-        uint gasPrice = tx.gasprice;
-
-        uint transactionCost = tx.gasprice * (GAS_USED_OFFSET + startingGas - gasleft());
-
-        uint gasCostInToken = transactionCost * getTokenQuote() / DECIMAL;
-
-        uint callerFee = callerFeeAmountInEther;
-
-        uint poolFee = poolFeeAmountInToken;
-
-        uint refund = transactionCost + callerFeeAmountInEther;
-
-        // Refund the caller with the spend ether plus additional fee
-        (bool success, ) = payable(caller).call{value: refund}("");
-
-        if (!success) revert CallerNotPaidEnoughGas(refund);
+    /**
+     * 
+     * @param txType type of transaction is it Transfer or Swap
+     */
+    function estimateFees(TxType txType) external view returns(uint) {
 
 
-        if (gasCostInToken > maxFee) revert TransactionUnderPriced(gasCostInToken, maxFee);
+        if (txType == TxType.TRANSFER) {
 
-        ///@dev Transfer Everything to protocol
-        token.safeTransferFrom(from, address(this), maxFee);
+            uint transactionCost = tx.gasprice * (GAS_USED_OFFSET * 2);
 
-        emit Fulfilled(caller, from, refundAddress, gasPrice, callerFee, gasCostInToken, poolFee);
+            return transactionCost * getTokenQuote() / DECIMAL;
 
-    }
+        } else if (txType == TxType.SWAP) {
 
+            uint transactionCost = tx.gasprice * (GAS_USED_OFFSET * 3);
 
-    function _verifySignature(address _owner, bytes32 structHash, uint8 v, bytes32 r, bytes32 s) internal view {
-        
-        bytes32 hash = _hashTypedDataV4(structHash);
-
-        address signer = ECDSA.recover(hash, v, r, s);
-
-        if (signer != _owner) {
-            revert ERC2612InvalidSigner(signer, _owner);
+            return transactionCost * getTokenQuote() / DECIMAL;
         }
 
+        return type(uint).max;
+       
     }
+
 
     function getFundShare(uint assets) view public returns (uint amountInTokens, uint amountInBnb) {
 
@@ -255,6 +243,55 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712, Nonce
             amountInBnb = assets;
         }
     
+    }
+
+
+    function _payFees(address caller, address from, address refundAddress, uint maxFee, uint startingGas) internal {
+
+        uint gasPrice = tx.gasprice;
+
+        console.log("Gas Price", tx.gasprice);
+
+        uint transactionCost = gasPrice * (GAS_USED_OFFSET + startingGas - gasleft());
+
+        console.log("Tx Cost", transactionCost);
+
+        uint poolFee = poolFeeAmountInToken;
+
+        uint gasCostInToken = (transactionCost * getTokenQuote() / DECIMAL) + poolFee;
+
+        console.log("Gas Cost In Token", gasCostInToken);
+        console.log("Max Fee  In Token", maxFee);
+
+        uint callerFee = callerFeeAmountInEther;
+
+        uint refund = transactionCost + callerFeeAmountInEther;
+
+        // Refund the caller with the spend ether plus additional fee
+        (bool success, ) = payable(caller).call{value: refund}("");
+
+        if (!success) revert CallerNotPaidEnoughGas(refund);
+
+        if (gasCostInToken > maxFee) revert TransactionUnderPriced(gasCostInToken, maxFee);
+
+        ///@dev Transfer Everything to protocol
+        token.safeTransferFrom(from, address(this), gasCostInToken);
+
+        emit Fulfilled(caller, from, refundAddress, gasPrice, callerFee, gasCostInToken, poolFee);
+
+    }
+
+
+    function _verifySignature(address _owner, bytes32 structHash, uint8 v, bytes32 r, bytes32 s) internal view {
+        
+        bytes32 hash = _hashTypedDataV4(structHash);
+
+        address signer = ECDSA.recover(hash, v, r, s);
+
+        if (signer != _owner) {
+            revert ERC2612InvalidSigner(signer, _owner);
+        }
+
     }
 
     /**
