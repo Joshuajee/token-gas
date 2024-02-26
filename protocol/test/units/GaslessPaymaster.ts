@@ -54,7 +54,7 @@ describe("GaslessPaymaster ", function () {
     }
 
 
-    async function transfer(deployed: any, maxFee: bigint = 801384861899n) {
+    async function transfer(deployed: any, maxFee = 801384861899n) {
 
         const {GaslessPaymaster, publicClient, domain, domain2, mockERC20WithPermit, user1, user3 }  = deployed 
 
@@ -77,7 +77,7 @@ describe("GaslessPaymaster ", function () {
         const signatures = await createPermit(
             user1.account.address, 
             GaslessPaymaster.address, 
-            (amount + maxFee).toString(),
+            (amountWithFee).toString(),
             nonces.toString(), 
             deadline.toString(), 
             domain
@@ -85,10 +85,8 @@ describe("GaslessPaymaster ", function () {
 
         const tx_signatures = await createTransferPermit(
             user1.account.address, 
-            user3.account.address, 
-            user1.account.address, 
+            user3.account.address,  
             amount.toString(),
-            (await GaslessPaymaster.read.nonces([user1.account.address])).toString(), 
             (maxFee).toString(),
             domain2
         )
@@ -109,7 +107,6 @@ describe("GaslessPaymaster ", function () {
 
         const transferData: any = [
             user3.account.address,
-            user1.account.address,
             amount,
             maxFee,
             tx_signatures.v,
@@ -209,9 +206,7 @@ describe("GaslessPaymaster ", function () {
             const tx_signatures = await createTransferPermit(
                 user1.account.address, 
                 user3.account.address, 
-                user1.account.address, 
-                amount.toString(),
-                (await GaslessPaymaster.read.nonces([user1.account.address])).toString(), 
+                amount.toString(), 
                 (maxFee).toString(),
                 domain2
             )
@@ -230,7 +225,6 @@ describe("GaslessPaymaster ", function () {
 
             const transferData: any = [
                 user3.account.address,
-                user1.account.address,
                 amount,
                 maxFee,
                 tx_signatures.v,
