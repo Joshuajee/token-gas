@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import {Nonces} from "@openzeppelin/contracts/utils/Nonces.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
@@ -16,14 +15,14 @@ import "./TokenVault.sol";
 import "hardhat/console.sol";
 
 
-contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712, Nonces {
+contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
 
     bytes32 private constant TRANSFER_PERMIT_TYPEHASH =
-        keccak256("Permit(address to,uint256 amount,uint256 maxFee,uint256 nonce)");
+        keccak256("Permit(address to,uint256 amount,uint256 maxFee)");
 
 
     bytes32 private constant SWAP_PERMIT_TYPEHASH =
-        keccak256("Permit(address to,uint256 amount,uint256 maxFee,uint256 nonce)");
+        keccak256("Permit(address to,uint256 amount,uint256 maxFee)");
 
     /**
      * @dev Mismatched signature.
@@ -127,7 +126,7 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712, Nonce
             permitData.s
         );
 
-        bytes32 structHash = keccak256(abi.encode(TRANSFER_PERMIT_TYPEHASH, transferData.to, transferData.amount, transferData.maxFee, _useNonce(from)));
+        bytes32 structHash = keccak256(abi.encode(TRANSFER_PERMIT_TYPEHASH, transferData.to, transferData.amount, transferData.maxFee));
 
         _verifySignature(from, structHash, transferData.v, transferData.r, transferData.s);
 

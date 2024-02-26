@@ -28,11 +28,11 @@ model Transactions {
   transactionSignature      String
   amount                    String
   fee                       String
-  permitNonce               String
-  transferNonce             String
+  nonce                     String
   paymasterAddress          String
   minAmountOut              String? // for swaps
   txHash                    String?
   deadline                  Int
+  message                   String?
 }
 

@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest,res: NextApiResponse<D
 
   const { 
     sender, to, permitSignature, transactionSignature,
-    amount, fee, permitNonce, transferNonce, paymasterAddress, deadline,
+    amount, fee, nonce, paymasterAddress, deadline,
   } = body
 
   try {
@@ -27,8 +27,7 @@ export default async function handler(req: NextApiRequest,res: NextApiResponse<D
         transactionSignature,
         amount,
         fee,
-        permitNonce,
-        transferNonce,
+        nonce,
         paymasterAddress,
         deadline
       }

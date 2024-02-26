@@ -87,7 +87,6 @@ describe("GaslessPaymaster ", function () {
             user1.account.address, 
             user3.account.address,  
             amount.toString(),
-            (await GaslessPaymaster.read.nonces([user1.account.address])).toString(), 
             (maxFee).toString(),
             domain2
         )
@@ -207,8 +206,7 @@ describe("GaslessPaymaster ", function () {
             const tx_signatures = await createTransferPermit(
                 user1.account.address, 
                 user3.account.address, 
-                amount.toString(),
-                (await GaslessPaymaster.read.nonces([user1.account.address])).toString(), 
+                amount.toString(), 
                 (maxFee).toString(),
                 domain2
             )

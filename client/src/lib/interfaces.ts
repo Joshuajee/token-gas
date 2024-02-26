@@ -7,8 +7,7 @@ export interface ITransactions {
     transactionSignature: string;
     amount: string,
     fee: string,            
-    permitNonce: string,
-    transferNonce: string,
+    nonce: string,
     paymasterAddress: Address,
     minAmountOut: string, // for swaps
     path: string, // for swaps

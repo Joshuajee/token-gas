@@ -1,4 +1,4 @@
-POST http://localhost:3000/api/transfers
+POST http://localhost:3000/api/swaps
 
 {
     "sender": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
@@ -9,7 +9,9 @@ POST http://localhost:3000/api/transfers
     "fee": "1000000000000000000",            
     "nonce": "0",
     "paymasterAddress": "Address",
-    "deadline": 2000000000
+    "deadline": 2000000000,
+    "minAmountOut": "100000000000",
+    "swapPath": "kmkmkmrk"
 }
 
 
