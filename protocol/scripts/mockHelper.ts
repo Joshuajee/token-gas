@@ -17,9 +17,10 @@ export async function deployPriceAggregator() {
 
     const usdcPriceFeeds = await viem.deployContract("MockV3Aggregator", [decimal, USDCInitailPrice])
 
-    
+    const daiPriceFeeds = await viem.deployContract("MockV3Aggregator", [decimal, USDCInitailPrice])
+
     return { 
-        bnbPriceFeeds, usdcPriceFeeds, decimal  
+        bnbPriceFeeds, usdcPriceFeeds, daiPriceFeeds, decimal  
     }
 
 }
