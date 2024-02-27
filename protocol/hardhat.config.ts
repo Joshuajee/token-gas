@@ -2,6 +2,11 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox-viem";
 import "hardhat-abi-exporter";
 import "hardhat-contract-sizer";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const PRIVATE_KEY  = String(process.env.PRIVATE_KEY)
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -39,7 +44,18 @@ const config: HardhatUserConfig = {
     //     url: "https://go.getblock.io/9d50c51d7b8744e1bba0dded3cdb360f"
     //   },
     //   chainId: 97
-    // }
+    // },
+    bscTestnet:{
+      url: "https://go.getblock.io/9d50c51d7b8744e1bba0dded3cdb360f",
+      accounts: [PRIVATE_KEY]
+    },
+    // bscFork: {
+    //   forking: {
+    //     enabled: true,
+    //     url: "https://go.getblock.io/9d50c51d7b8744e1bba0dded3cdb360f"
+    //   },
+    //   chainId: 97
+    // },
 
   }
 };

@@ -10,7 +10,16 @@ export interface ITransactions {
     nonce: string,
     paymasterAddress: Address,
     minAmountOut: string, // for swaps
-    path: string, // for swaps
-    deadline: number,
+    path?: string, // for swaps
+    deadline: string,
     verifyingContract: string
+}
+
+
+export interface ITransactionDetails {
+    sender: Address, 
+    receiver: Address, 
+    deadline: string, 
+    amount: string, 
+    maxFee: string 
 }

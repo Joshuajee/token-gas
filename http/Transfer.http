@@ -1,15 +1,16 @@
+
 POST http://localhost:3000/api/transfers
 
 {
     "sender": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
     "to": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",   
-    "permitSignature": "string",
-    "transactionSignature": "string",
+    "permitSignature": "0x50d83bc68e05faeaff4b1ea9deed5cd56d9b5d6f178053836cf6accca886b1fc1df1bfbd788abff004e67f8be92792d5a6875753817d0842c6631c127f89c7fe1b",
+    "transactionSignature": "0xa8af444fdd88a2748285d378aae28fc603b428abae415ce6bef2acc57cd609fe335931335ee2cb3e71229bf3a91984489aa5f92659d0d297fcb445593f38aca41c",
     "amount": "10000000000000000000000",
-    "fee": "1000000000000000000",            
+    "fee": "10000000000000000000",            
     "nonce": "0",
-    "paymasterAddress": "Address",
-    "deadline": 2000000000
+    "paymasterAddress": "0x61c36a8d610163660E21a8b7359e1Cac0C9133e1",
+    "deadline": "100000000000000"
 }
 
 
