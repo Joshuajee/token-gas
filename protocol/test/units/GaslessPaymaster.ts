@@ -54,7 +54,7 @@ describe("GaslessPaymaster ", function () {
     }
 
 
-    async function transfer(deployed: any, maxFee = 801384861899n) {
+    async function transfer(deployed: any, maxFee = 420493378885852241n) {
 
         const {GaslessPaymaster, publicClient, domain, domain2, mockERC20WithPermit, user1, user3 }  = deployed 
 
@@ -124,8 +124,9 @@ describe("GaslessPaymaster ", function () {
         // Amount sent should be deducted from Sender Balance
         //expect(await mockERC20WithPermit.read.balanceOf([user1.account.address])).to.be.lessThan(balance)
 
+        console.log(" -- ", await publicClient.getBalance({address: caller.account.address}) - callerInitialBalance)
         //
-        expect(Number(await publicClient.getBalance({address: user1.account.address}) - callerInitialBalance)).to.be.gt(Number(await GaslessPaymaster.read.callerFeeAmountInEther()))
+        expect(Number(await publicClient.getBalance({address: caller.account.address}) - callerInitialBalance)).to.be.gt(Number(await GaslessPaymaster.read.callerFeeAmountInEther()))
         
         // check if the contract received the fee
         //expect(await mockERC20WithPermit.read.balanceOf([GaslessPaymaster.address])).to.be.greaterThan(initialTokenBalOfProtocol)    
@@ -185,7 +186,11 @@ describe("GaslessPaymaster ", function () {
 
             const amount = parseEther("1", "wei")
 
-            const maxFee = 801384861899n
+            const maxFee = 420493378885852241n
+
+            console.log("{{",await GaslessPaymaster.read.getTokenQuote())
+            // 989121280352634
+            // 4021250033728
 
             const amountWithFee = amount + maxFee
 
@@ -284,9 +289,7 @@ describe("GaslessPaymaster ", function () {
 
             const deployed = await loadFixture(deployAndSupplyLiquidity)
 
-            //const gasPrice = await deployed.GaslessPaymaster.estimateGas()
-
-            const maxFee = await deployed.GaslessPaymaster.read.estimateFees([0])
+            const maxFee = await deployed.GaslessPaymaster.read.estimateFees([0, 1036579488n])
 
             console.log(maxFee)
 
@@ -322,21 +325,37 @@ describe("GaslessPaymaster ", function () {
 
         })
 
-        it("Should be able to withdraw BNB", async ( ) => {
+        it("Should be able to withdraw BNB, when no transfer has been made - partial withdrawal", async ( ) => {
 
             const deployed = await loadFixture(deployAndSupplyLiquidity)
 
-            console.log(await deployed.GaslessPaymaster.read.balanceOf([deployed.user1.account.address]))
+            const initialLPBal = (await deployed.GaslessPaymaster.read.balanceOf([deployed.user1.account.address]))
     
+            const initialBal = await deployed.publicClient.getBalance({address: deployed.GaslessPaymaster.address})
+
+            const amount = (initialLPBal + 1n) / 2n;
+
+            console.log("------------------------------------------------")
+
+            console.log(await deployed.GaslessPaymaster.read.totalAssets())
+
+            console.log(await deployed.GaslessPaymaster.read.totalSupply())
 
             await deployed.GaslessPaymaster.write.withdraw([
-                deployed.value / 2n, 
-                deployed.user2.account.address, 
+                amount, 
+                deployed.user1.account.address, 
                 deployed.user1.account.address
             ])
 
-            console.log(await deployed.GaslessPaymaster.read.balanceOf([deployed.user1.account.address]))
+            console.log("------------------------------------------------")
+
+            console.log(await deployed.GaslessPaymaster.read.totalAssets())
+
+            console.log(await deployed.GaslessPaymaster.read.totalSupply())
+
+            expect(await deployed.GaslessPaymaster.read.balanceOf([deployed.user1.account.address])).to.be.equal(initialLPBal - amount)
     
+            expect(await deployed.publicClient.getBalance({address: deployed.GaslessPaymaster.address})).to.be.equal(initialBal - amount)
         
         })
 

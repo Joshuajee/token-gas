@@ -19,6 +19,9 @@ export async function deployPriceAggregator() {
 
     const daiPriceFeeds = await viem.deployContract("MockV3Aggregator", [decimal, USDCInitailPrice])
 
+
+    console.log("bnb ",await bnbPriceFeeds.read.latestRoundData())
+    console.log("bnb ", (await usdcPriceFeeds.read.latestAnswer() * 8n)/ await bnbPriceFeeds.read.latestAnswer())
     return { 
         bnbPriceFeeds, usdcPriceFeeds, daiPriceFeeds, decimal  
     }
@@ -34,13 +37,5 @@ export const calculatePrice = async (amount: bigint, baseCurrencyAddress: Addres
     const basePrice = await baseCurrency.read.latestAnswer()
     const quotePrice = await quoteCurrency.read.latestAnswer()
 
-    return (basePrice * amount / quotePrice) 
+    return (amount * ((quotePrice * DECIMAL) / basePrice)) / DECIMAL
 }
-
-
-// export const selectPriceFeeds = (currency: CurrencyType) => {
-
-
-
-//     return 0
-// }
