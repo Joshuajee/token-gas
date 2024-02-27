@@ -25,7 +25,6 @@ async function main() {
 
   console.log(values)
   
-
 }
 
 // We recommend this pattern to be able to use async/await everywhere

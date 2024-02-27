@@ -28,8 +28,8 @@ async function main() {
   const domain : IDomain = {
     name: await USDC.read.name(),
     version: "1",
-    verifyingContract: usdcPaymaster,
-    chainId: 31337
+    verifyingContract: usdc,
+    chainId: 1337
   }
 
   const domainInfo = await USDCPaymaster.read.eip712Domain()
@@ -38,10 +38,8 @@ async function main() {
     name: domainInfo[1],
     version: domainInfo[2],
     verifyingContract: domainInfo[4],
-    chainId: Number(domainInfo[3])
+    chainId: 1337
   }
-
-  console.log(domain2)
 
   const balance = await USDC.read.balanceOf([user])
 
@@ -58,11 +56,13 @@ async function main() {
     user, 
     receiver,  
     amount.toString(),
-    (maxFee).toString(),
+    maxFee.toString(),
     domain2
   )
 
   console.log({signatures, tx_signatures})
+
+  console.log(balance)
 
 }
 

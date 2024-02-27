@@ -105,7 +105,7 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
     }
 
 
-    function transfer(ERC20PermitData calldata permitData, TransferData calldata transferData) external nonReentrant {
+    function transferGasless(ERC20PermitData calldata permitData, TransferData calldata transferData) external nonReentrant {
 
         uint256 startingGas = gasleft();
 

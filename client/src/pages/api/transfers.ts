@@ -46,6 +46,7 @@ export default async function handler(req: NextApiRequest,res: NextApiResponse<D
 
   } catch (e) {
     //await prisma.$connect()
+    console.error(e)
     res.status(400).json({status: "error", message: (e as any)?.message})
     
   }

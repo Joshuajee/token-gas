@@ -1,13 +1,12 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { Address, checksumAddress, createPublicClient, createWalletClient, getContract, http } from "viem";
-import viem from "viem";
+import { Address, createWalletClient, getContract, http, parseEther } from "viem";
 import { ITransactionDetails } from "./interfaces";
 import { hardhat, mainnet } from "viem/chains";
 import { privateKeyToAccount } from 'viem/accounts'
 import { EXECUTOR_PRIVATE_KEY } from "./constants";
 import GaslessPaymasterAbi from "../abi/contracts/GaslessPaymaster.sol/GaslessPaymaster.json";
-import MockErc20Abi from "../abi/contracts/mocks/MockERC20WithPermit.sol/MockERC20WithPermit.json";
+
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -133,7 +132,7 @@ export const transfer = async (paymasterAddress: Address, permitSignature: strin
   const decodeTransfer = decodeSignature(transferSignature)
 
   const permitData = [
-    checksumAddress(sender),
+    sender,
     BigInt(amount) + BigInt(maxFee),
     deadline,
     decodePermit.v,
@@ -142,7 +141,7 @@ export const transfer = async (paymasterAddress: Address, permitSignature: strin
   ]
 
   const transferData = [
-    checksumAddress(receiver),
+    receiver,
     amount,
     maxFee,
     decodeTransfer.v,
@@ -150,14 +149,17 @@ export const transfer = async (paymasterAddress: Address, permitSignature: strin
     decodeTransfer.s
   ]
 
+
+  console.log(permitData, transferData)
+
+
   const { GaslessPaymaster } = await getPaymaster(paymasterAddress)
 
-  console.log(await GaslessPaymaster.read.balanceOf([sender]))
+  console.log(await GaslessPaymaster.read.eip712Domain())
 
   console.log(await GaslessPaymaster.read.totalAssets())
 
-  await GaslessPaymaster.write.transfer([permitData, transferData])
-
+  await GaslessPaymaster.write.transferGasless([permitData, transferData])
 
 }
 
@@ -178,7 +180,7 @@ const getPaymaster = async (paymasterAddress: Address) => {
     client: client,
   })
 
-  return {GaslessPaymaster, client }
+  return {GaslessPaymaster, client, account }
 }
 
 const stripAddress = (address: Address) => {
