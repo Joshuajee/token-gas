@@ -84,10 +84,10 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
 
 
     // do constant offset for gas
-    uint32 constant public GAS_USED_OFFSET = 110000;
+    uint32 constant public GAS_USED_OFFSET = 900000;
     // fee for transaction caller
     uint public callerFeeAmountInEther = 1 gwei; 
-    uint public poolFeeAmountInToken = 1 gwei; 
+    uint public poolFeeAmountInToken = 1000 gwei; 
 
     uint constant public DECIMAL = 1 ether;
 
@@ -182,7 +182,9 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
         (, int256 bnbPrice,,,) = bnbPriceFeeds.latestRoundData();
         (, int256 tokenPrice,,,) = tokenPriceFeeds.latestRoundData();
         // multiply with decimal to prevent precision loss
-        return uint(tokenPrice * int(DECIMAL) / bnbPrice);
+        // return uint((tokenPrice * int(DECIMAL)) / bnbPrice);
+
+        return uint((bnbPrice * int(DECIMAL)) / tokenPrice);
     }
 
     /**
@@ -193,7 +195,7 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
         (, int256 bnbPrice,,,) = bnbPriceFeeds.latestRoundData();
         (, int256 tokenPrice,,,) = tokenPriceFeeds.latestRoundData();
         // multiply with decimal to prevent precision loss
-        return uint(bnbPrice * int(DECIMAL) / tokenPrice);
+        return uint((tokenPrice * int(DECIMAL)) / bnbPrice);
     }
 
 
@@ -201,18 +203,18 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
      * 
      * @param txType type of transaction is it Transfer or Swap
      */
-    function estimateFees(TxType txType) external view returns(uint) {
+    function estimateFees(TxType txType, uint64 gasPrice) external view returns(uint) {
 
 
         if (txType == TxType.TRANSFER) {
 
-            uint transactionCost = tx.gasprice * (GAS_USED_OFFSET * 2);
+            uint transactionCost = gasPrice * (GAS_USED_OFFSET * 2);
 
             return transactionCost * getTokenQuote() / DECIMAL;
 
         } else if (txType == TxType.SWAP) {
 
-            uint transactionCost = tx.gasprice * (GAS_USED_OFFSET * 3);
+            uint transactionCost = gasPrice * (GAS_USED_OFFSET * 3);
 
             return transactionCost * getTokenQuote() / DECIMAL;
         }
@@ -255,14 +257,16 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
 
         uint poolFee = poolFeeAmountInToken;
 
-        uint gasCostInToken = (transactionCost * getTokenQuote() / DECIMAL) + poolFee;
-
-        console.log("Gas Cost In Token", gasCostInToken);
-        console.log("Max Fee  In Token", maxFee);
-
         uint callerFee = callerFeeAmountInEther;
 
-        uint refund = transactionCost + callerFeeAmountInEther;
+        uint gasCostInToken = ((transactionCost + callerFee) * getTokenQuote()) / DECIMAL + poolFee;
+
+        console.log("Gas Cost In Token", gasCostInToken);
+         console.log("Gas Cost In Token", gasCostInToken / 1 ether);
+        console.log("Max Fee  In Token", maxFee);
+
+
+        uint refund = transactionCost + callerFee;
 
         // Refund the caller with the spend ether plus additional fee
         (bool success, ) = payable(caller).call{value: refund}("");
@@ -327,7 +331,7 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
         }
 
         if (amountInBnb > 0) {
-            (bool success,) = payable(receiver).call{value: amountInTokens}("");
+            (bool success,) = payable(receiver).call{value: amountInBnb}("");
             if (!success) revert TransferFailed();
         }
 

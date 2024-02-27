@@ -5,9 +5,9 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "deploy": "hardhat run --network sepolia scripts/deploy.ts",
+    "deploy": "hardhat run --network bsc-testnet scripts/deploy.ts",
     "deploy-local": "hardhat run --network localhost scripts/deployLocal.ts",
-    "deploy-local-fork": "hardhat run --network localhost scripts/deployLocal.ts",
+    "deploy-local-fork": "hardhat run --network hardhat scripts/deployLocal.ts",
     "coverage": "hardhat coverage"
   },
   "devDependencies": {
