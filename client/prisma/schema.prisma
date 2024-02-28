@@ -24,15 +24,15 @@ model Transactions {
   sender                    String
   to                        String
   status                    Status @default(PENDING)
-  permitSignature           String
-  transactionSignature      String
+  permitSignature           String //@unique
+  transactionSignature      String //@unique
   amount                    String
   fee                       String
   nonce                     String
   paymasterAddress          String
   minAmountOut              String? // for swaps
   txHash                    String?
-  deadline                  Int
+  deadline                  String
   message                   String?
 }
 

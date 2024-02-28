@@ -841,6 +841,11 @@
         "internalType": "enum GaslessPaymaster.TxType",
         "name": "txType",
         "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "gasPrice",
+        "type": "uint64"
       }
     ],
     "name": "estimateFees",
@@ -1260,7 +1265,7 @@
         "type": "tuple"
       }
     ],
-    "name": "swapOnUNISWAP",
+    "name": "swapPancakeSwapGasless",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1357,6 +1362,35 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "transferFrom",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "components": [
           {
             "internalType": "address",
@@ -1431,37 +1465,8 @@
         "type": "tuple"
       }
     ],
-    "name": "transfer",
+    "name": "transferGasless",
     "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "from",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "value",
-        "type": "uint256"
-      }
-    ],
-    "name": "transferFrom",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },

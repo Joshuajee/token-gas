@@ -1,8 +1,18 @@
 import { formatEther, parseEther, zeroAddress } from "viem";
-import hre from "hardhat";
+import hre, { network, viem } from "hardhat";
 import { deployPriceAggregator } from "./mockHelper";
+import { use } from "chai";
+
+const user = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+const receiver = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
 
 async function main() {
+
+  const publicClient = await viem.getPublicClient()
+
+  const value = parseEther("100", "wei")
+
+  console.log(" -- ", await publicClient.getBalance({address: user }))
 
   const { bnbPriceFeeds, usdcPriceFeeds, daiPriceFeeds } = await deployPriceAggregator()
 
@@ -23,7 +33,22 @@ async function main() {
 
   console.log("Gasless Factory: ", GaslessFactory.address)
 
+  const USDCPaymaster = await hre.viem.getContractAt("GaslessPaymaster", values[0].payMaster)
+
+  await USDCPaymaster.write.deposit([user], { value: value })
+
+  const DAIPaymaster = await hre.viem.getContractAt("GaslessPaymaster", values[1].payMaster)
+
+  await DAIPaymaster.write.deposit([user], { value: value })
+
+
   console.log(values)
+
+  console.log(await mockUSDC.read.balanceOf(["0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"]))
+
+  console.log(await USDCPaymaster.read.eip712Domain())
+
+  console.log(await mockUSDC.read.eip712Domain())
 
 
 }

@@ -2,6 +2,13 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox-viem";
 import "hardhat-abi-exporter";
 import "hardhat-contract-sizer";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const PRIVATE_KEY = String(process.env.PRIVATE_KEY);
+
+const BSC_RPC = String(process.env.BSC_RPC);
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -35,7 +42,16 @@ const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {
-      chainId: 1337, // Customize the chain ID here
+      forking: {
+        enabled: true,
+        url: BSC_RPC,
+        blockNumber: 38143938,
+      },
+      chainId: 97,
+    },
+    bscTestnet: {
+      url: BSC_RPC,
+      accounts: [PRIVATE_KEY],
     },
   },
 };

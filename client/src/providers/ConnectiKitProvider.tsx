@@ -13,6 +13,13 @@ const config = createConfig(
     chains: [localhost],
     transports: {
 
+      // RPC URL for each chain
+      [bscTestnet.id]: fallback([
+        http(
+          `https://bsc-testnet.public.blastapi.io`,
+        ),
+      ]),
+
       [localhost.id]: fallback([
         http(
           `http://127.0.0.1:8545`,
@@ -33,20 +40,13 @@ const config = createConfig(
   }),
 );
 
-
+const queryClient = new QueryClient()
 
 export const Web3Provider = ({ children }: { children: React.ReactNode }) => {
 
-  const [cli, setCli] = useState<QueryClient>(new QueryClient())
-
-  useEffect(() => {
-    setCli(new QueryClient)
-
-  }, [])
-
   return (
     <WagmiProvider config={config}>
-      <QueryClientProvider client={cli}>
+      <QueryClientProvider client={queryClient}>
         <ConnectKitProvider>{children}</ConnectKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
