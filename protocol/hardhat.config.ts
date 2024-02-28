@@ -47,7 +47,6 @@ const config: HardhatUserConfig = {
         url: BSC_RPC,
         blockNumber: 38143938,
       },
-      chainId: 97,
     },
     bscTestnet: {
       url: BSC_RPC,
