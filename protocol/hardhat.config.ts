@@ -32,13 +32,10 @@ const config: HardhatUserConfig = {
     strict: true,
     only: ["GaslessFactory", "GaslessPaymaster"],
   },
+  defaultNetwork: "hardhat",
   networks: {
     hardhat: {
-      forking: {
-        enabled: true,
-        url: "https://go.getblock.io/fa9c3b8a855d4dd5b786ece5594b8190",
-      },
-      chainId: 97,
+      chainId: 1337, // Customize the chain ID here
     },
   },
 };

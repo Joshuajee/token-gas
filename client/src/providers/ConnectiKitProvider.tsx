@@ -5,18 +5,14 @@ import { bscTestnet, localhost } from "wagmi/chains";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
 import { fallback } from "viem";
+import { useEffect, useState } from "react";
 
 const config = createConfig(
   getDefaultConfig({
     // Your dApps chains
-    chains: [localhost, bscTestnet],
+    chains: [localhost],
     transports: {
-      // RPC URL for each chain
-      [bscTestnet.id]: fallback([
-        http(
-          `https://go.getblock.io/fa9c3b8a855d4dd5b786ece5594b8190`,
-        ),
-      ]),
+
       [localhost.id]: fallback([
         http(
           `http://127.0.0.1:8545`,
@@ -37,14 +33,23 @@ const config = createConfig(
   }),
 );
 
-const queryClient = new QueryClient();
+
 
 export const Web3Provider = ({ children }: { children: React.ReactNode }) => {
+
+  const [cli, setCli] = useState<QueryClient>(new QueryClient())
+
+  useEffect(() => {
+    setCli(new QueryClient)
+
+  }, [])
+
   return (
     <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={cli}>
         <ConnectKitProvider>{children}</ConnectKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );
+
 };
