@@ -1265,7 +1265,7 @@
         "type": "tuple"
       }
     ],
-    "name": "swapOnUNISWAP",
+    "name": "swapPancakeSwapGasless",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

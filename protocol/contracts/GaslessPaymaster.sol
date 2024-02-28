@@ -9,9 +9,9 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
-import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "./TokenVault.sol";
+import '@pancakeswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import "hardhat/console.sol";
 
 
@@ -138,7 +138,7 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
 
     }
 
-    function swapOnUNISWAP(ERC20PermitData calldata permitData, SwapData calldata swapData) external nonReentrant {
+    function swapPancakeSwapGasless(ERC20PermitData calldata permitData, SwapData calldata swapData) external nonReentrant {
 
         uint256 startingGas = gasleft();
 

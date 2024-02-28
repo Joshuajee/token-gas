@@ -10,6 +10,7 @@ const PRIVATE_KEY  = String(process.env.PRIVATE_KEY)
 
 const BSC_RPC  = String(process.env.BSC_RPC)
 
+
 const config: HardhatUserConfig = {
   solidity: {
     compilers: [
@@ -42,7 +43,7 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        enabled: false,
+        enabled: true,
         url: BSC_RPC,
         blockNumber: 38143938
       },
