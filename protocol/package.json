@@ -5,6 +5,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
+    "start": "hardhat node",
+    "test": "hardhat --network hardhat test",
     "deploy": "hardhat run --network bsc-testnet scripts/deploy.ts",
     "deploy-local": "hardhat run --network localhost scripts/deployLocal.ts",
     "deploy-local-fork": "hardhat run --network hardhat scripts/deployLocal.ts",
@@ -33,8 +35,8 @@
   "dependencies": {
     "@chainlink/contracts": "^0.8.0",
     "@openzeppelin/contracts": "^5.0.1",
+    "@pancakeswap/sdk": "^5.7.7",
     "@uniswap/v3-periphery": "^1.4.4",
-    "dotenv": "^16.4.5",
-    "ethers": "5.7.2"
+    "dotenv": "^16.4.5"
   }
 }

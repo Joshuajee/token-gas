@@ -8,6 +8,8 @@ dotenv.config();
 
 const PRIVATE_KEY  = String(process.env.PRIVATE_KEY)
 
+const BSC_RPC  = String(process.env.BSC_RPC)
+
 const config: HardhatUserConfig = {
   solidity: {
     compilers: [
@@ -38,25 +40,18 @@ const config: HardhatUserConfig = {
     only: ["GaslessFactory", "GaslessPaymaster"],
   },
   networks: {
-    // hardhat: {
-    //   forking: {
-    //     enabled: true,
-    //     url: "https://go.getblock.io/9d50c51d7b8744e1bba0dded3cdb360f"
-    //   },
-    //   chainId: 97
-    // },
+    hardhat: {
+      forking: {
+        enabled: false,
+        url: BSC_RPC,
+        blockNumber: 38143938
+      },
+      chainId: 97
+    },
     bscTestnet:{
-      url: "https://go.getblock.io/9d50c51d7b8744e1bba0dded3cdb360f",
+      url: BSC_RPC,
       accounts: [PRIVATE_KEY]
     },
-    // bscFork: {
-    //   forking: {
-    //     enabled: true,
-    //     url: "https://go.getblock.io/9d50c51d7b8744e1bba0dded3cdb360f"
-    //   },
-    //   chainId: 97
-    // },
-
   }
 };
 

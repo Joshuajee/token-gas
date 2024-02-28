@@ -22,11 +22,13 @@ describe("GaslessPaymaster ", function () {
             priceAggregator.bnbPriceFeeds.address, priceAggregator.usdcPriceFeeds.address
         ])
 
+        const tokenDomainInfo = await GaslessPaymaster.read.eip712Domain()
+
         const domain : IDomain = {
-            name: await mockERC20WithPermit.read.name(),
-            version: "1",
-            verifyingContract: mockERC20WithPermit.address,
-            chainId: 31337
+            name: tokenDomainInfo[1],
+            version: tokenDomainInfo[2],
+            verifyingContract: tokenDomainInfo[4],
+            chainId: Number(tokenDomainInfo[3])
         }
 
         const domainInfo = await GaslessPaymaster.read.eip712Domain()
@@ -37,6 +39,8 @@ describe("GaslessPaymaster ", function () {
             verifyingContract: domainInfo[4],
             chainId: Number(domainInfo[3])
         }
+
+        console.log({domainInfo})
         
         return {GaslessPaymaster, publicClient, domain, domain2, mockERC20WithPermit, ...priceAggregator, user1, user2, user3, user4}
     }
@@ -65,8 +69,6 @@ describe("GaslessPaymaster ", function () {
         const caller = user1
 
         const nonces =  await mockERC20WithPermit.read.nonces([user1.account.address])
-
-        console.log({nonces})
 
         const amount = parseEther("1000", "wei")
 
@@ -120,9 +122,8 @@ describe("GaslessPaymaster ", function () {
 
         const callerInitialBalance = await publicClient.getBalance({address: caller.account.address})
 
-        const info = await GaslessPaymaster.write.transferGasless([permitData, transferData])
+        await GaslessPaymaster.write.transferGasless([permitData, transferData])
 
-        console.log({info})
         // Recipient Balance should be equal to amount before after
         expect(await mockERC20WithPermit.read.balanceOf([user3.account.address])).to.be.equal(recipientBalInitial + amount)
 

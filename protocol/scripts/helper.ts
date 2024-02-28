@@ -78,6 +78,8 @@ const signWithSignature = async (owner: Address, dataToSign: any) => {
 
     const signature =  await (await viem.getWalletClient(owner)).signTypedData(dataToSign)
 
+    console.log(await (await viem.getWalletClient(owner)).account.address, "----")
+
     const pureSig = signature.replace("0x", "")
 
     const r = Buffer.from(pureSig.substring(0, 64), 'hex')

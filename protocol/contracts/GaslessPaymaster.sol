@@ -128,7 +128,7 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
 
         bytes32 structHash = keccak256(abi.encode(TRANSFER_PERMIT_TYPEHASH, transferData.to, transferData.amount, transferData.maxFee));
 
-        //_verifySignature(from, structHash, transferData.v, transferData.r, transferData.s);
+        _verifySignature(from, structHash, transferData.v, transferData.r, transferData.s);
 
         token.safeTransferFrom(from, transferData.to, amount);
 
