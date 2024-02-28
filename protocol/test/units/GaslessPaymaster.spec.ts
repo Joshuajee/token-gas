@@ -2,8 +2,11 @@ import {loadFixture} from "@nomicfoundation/hardhat-toolbox-viem/network-helpers
 import { expect } from "chai";
 import hre, { viem } from "hardhat";
 import { checksumAddress, parseEther } from "viem";
-import { IDomain, createPermit, createTransferPermit} from "../../scripts/helper";
-import { calculatePrice, deployPriceAggregator } from "../../scripts/mockHelper";
+import { IDomain, bnbPriceFeeds, createPermit, createTransferPermit, maxFee, swapRouterV3, usdcPriceFeeds} from "../../scripts/helper";
+import { calculatePrice } from "../../scripts/mockHelper";
+
+
+
 
 describe("GaslessPaymaster ", function () {
 
@@ -13,20 +16,21 @@ describe("GaslessPaymaster ", function () {
 
         const [user1, user2, user3, user4] = await hre.viem.getWalletClients();
 
-        const priceAggregator = await deployPriceAggregator()
-
         const mockERC20WithPermit = await hre.viem.deployContract("MockERC20WithPermit", ["mockUSDC", "mockUSDC"])
 
         const GaslessPaymaster = await hre.viem.deployContract("GaslessPaymaster", [
-            mockERC20WithPermit.address, mockERC20WithPermit.address,
-            priceAggregator.bnbPriceFeeds.address, priceAggregator.usdcPriceFeeds.address
+            mockERC20WithPermit.address, swapRouterV3,
+            bnbPriceFeeds, usdcPriceFeeds
         ])
 
+        const tokenDomainInfo = await mockERC20WithPermit.read.eip712Domain()
+
+
         const domain : IDomain = {
-            name: await mockERC20WithPermit.read.name(),
-            version: "1",
-            verifyingContract: mockERC20WithPermit.address,
-            chainId: 31337
+            name: tokenDomainInfo[1],
+            version: tokenDomainInfo[2],
+            verifyingContract: tokenDomainInfo[4],
+            chainId: Number(tokenDomainInfo[3])
         }
 
         const domainInfo = await GaslessPaymaster.read.eip712Domain()
@@ -38,7 +42,7 @@ describe("GaslessPaymaster ", function () {
             chainId: Number(domainInfo[3])
         }
         
-        return {GaslessPaymaster, publicClient, domain, domain2, mockERC20WithPermit, ...priceAggregator, user1, user2, user3, user4}
+        return {GaslessPaymaster, publicClient, domain, domain2, mockERC20WithPermit, user1, user2, user3, user4}
     }
 
 
@@ -54,7 +58,7 @@ describe("GaslessPaymaster ", function () {
     }
 
 
-    async function transfer(deployed: any, maxFee = parseEther("1", "wei")) {
+    async function transfer(deployed: any, maxFee = parseEther("2.5", "wei")) {
 
         const {GaslessPaymaster, publicClient, domain, domain2, mockERC20WithPermit, user1, user3 }  = deployed 
 
@@ -65,8 +69,6 @@ describe("GaslessPaymaster ", function () {
         const caller = user1
 
         const nonces =  await mockERC20WithPermit.read.nonces([user1.account.address])
-
-        console.log({nonces})
 
         const amount = parseEther("1000", "wei")
 
@@ -92,8 +94,6 @@ describe("GaslessPaymaster ", function () {
             (maxFee).toString(),
             domain2
         )
-
-        console.log("---====----",{signatures, tx_signatures})
         
         // Recipient Balance should be equal to zero before Transfer
         const recipientBalInitial = await mockERC20WithPermit.read.balanceOf([user3.account.address])
@@ -128,7 +128,7 @@ describe("GaslessPaymaster ", function () {
         // Amount sent should be deducted from Sender Balance
         //expect(await mockERC20WithPermit.read.balanceOf([user1.account.address])).to.be.lessThan(balance)
 
-        console.log(" -- ", await publicClient.getBalance({address: caller.account.address}) - callerInitialBalance)
+    
         //
         expect(Number(await publicClient.getBalance({address: caller.account.address}) - callerInitialBalance)).to.be.gt(Number(await GaslessPaymaster.read.callerFeeAmountInEther()))
         
@@ -190,12 +190,6 @@ describe("GaslessPaymaster ", function () {
 
             const amount = parseEther("1", "wei")
 
-            const maxFee = 420493378885852241n
-
-            console.log("{{",await GaslessPaymaster.read.getTokenQuote())
-            // 989121280352634
-            // 4021250033728
-
             const amountWithFee = amount + maxFee
 
             const deadline = BigInt("10000000000999")
@@ -225,7 +219,7 @@ describe("GaslessPaymaster ", function () {
 
             const permitData: any = [
                 user1.account.address,
-                amount + maxFee,
+                amountWithFee,
                 deadline,
                 signatures.v,
                 signatures.r,
@@ -293,9 +287,7 @@ describe("GaslessPaymaster ", function () {
 
             const deployed = await loadFixture(deployAndSupplyLiquidity)
 
-            const maxFee = await deployed.GaslessPaymaster.read.estimateFees([0, 1036579488n])
-
-            console.log(maxFee)
+            const maxFee = await deployed.GaslessPaymaster.read.estimateFees([0, 10365794880n])
 
             await transfer(deployed, maxFee)
         })
@@ -320,11 +312,11 @@ describe("GaslessPaymaster ", function () {
             const smallAmount = parseEther("0.0001", "wei")
 
             expect(await deployed.GaslessPaymaster.read.getFundShare([smallAmount])).to.deep.equal([
-                await calculatePrice(smallAmount, deployed.usdcPriceFeeds.address, deployed.bnbPriceFeeds.address), 0n
+                await calculatePrice(smallAmount, usdcPriceFeeds, bnbPriceFeeds), 0n
             ])
 
             expect(await deployed.GaslessPaymaster.read.getFundShare([deployed.value])).to.deep.equal([
-                contractUSDBal - 1n, (deployed.value - await calculatePrice(contractUSDBal, deployed.bnbPriceFeeds.address, deployed.usdcPriceFeeds.address))
+                contractUSDBal - 1n, (deployed.value - await calculatePrice(contractUSDBal, bnbPriceFeeds, usdcPriceFeeds))
             ])
 
         })

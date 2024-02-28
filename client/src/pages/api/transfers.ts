@@ -26,9 +26,11 @@ export default async function handler(req: NextApiRequest,res: NextApiResponse<D
     receiver: to
   } 
 
+  let hash = "";
+
   try {
 
-    await  prisma.transactions.create({
+    await prisma.transactions.create({
       data: { 
         sender, 
         to,
@@ -42,16 +44,33 @@ export default async function handler(req: NextApiRequest,res: NextApiResponse<D
       }
     })
 
-    await transfer(paymasterAddress, permitSignature, transactionSignature, transactionDetails)
+    hash = await transfer(paymasterAddress, permitSignature, transactionSignature, transactionDetails)
+
+    await prisma.transactions.updateMany({
+      where: {
+        sender,
+        permitSignature,
+        transactionSignature,
+        paymasterAddress
+      },
+      data: {
+        status: "SUCCESS",
+        txHash: hash
+      }
+    })
 
   } catch (e) {
-    //await prisma.$connect()
+
     console.error(e)
+
+    await prisma.$disconnect()
+
     res.status(400).json({status: "error", message: (e as any)?.message})
-    
   }
+
+  await prisma.$disconnect()
   
-  res.status(200).json({status: "success", message: "done"});
+  res.status(200).json({status: "success", message: hash });
 }
 
 
@@ -62,5 +81,5 @@ export const config = {
     },
   },
   // Specifies the maximum allowed duration for this function to execute (in seconds)
-  maxDuration: 30,
+  maxDuration: 360,
 }
