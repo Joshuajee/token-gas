@@ -123,48 +123,7 @@ export const decodeSignature = (signature: string) => {
 }
 
 
-export const transfer = async (paymasterAddress: Address, permitSignature: string, transferSignature: string, transactionDetails: ITransactionDetails) => {
-
-  const { sender, receiver, amount, deadline, maxFee } = transactionDetails
-  
-  const decodePermit = decodeSignature(permitSignature)
-
-  const decodeTransfer = decodeSignature(transferSignature)
-
-  const permitData = [
-    sender,
-    BigInt(amount) + BigInt(maxFee),
-    deadline,
-    decodePermit.v,
-    decodePermit.r,
-    decodePermit.s
-  ]
-
-  const transferData = [
-    receiver,
-    amount,
-    maxFee,
-    decodeTransfer.v,
-    decodeTransfer.r,
-    decodeTransfer.s
-  ]
-
-
-  console.log(permitData, transferData)
-
-
-  const { GaslessPaymaster } = await getPaymaster(paymasterAddress)
-
-  console.log(await GaslessPaymaster.read.eip712Domain())
-
-  console.log(await GaslessPaymaster.read.totalAssets())
-
-  await GaslessPaymaster.write.transferGasless([permitData, transferData])
-
-}
-
-
-const getPaymaster = async (paymasterAddress: Address) => {
+export const getPaymaster = async (paymasterAddress: Address) => {
 
   const account = privateKeyToAccount(EXECUTOR_PRIVATE_KEY) 
  

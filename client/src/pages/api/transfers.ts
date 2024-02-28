@@ -1,7 +1,7 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import { ITransactionDetails, ITransactions } from "@/lib/interfaces";
 import prisma from "@/lib/prisma";
-import { transfer } from "@/lib/utils";
+import { transfer } from "@/lib/transactions";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 type Data = {

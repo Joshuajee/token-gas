@@ -36,6 +36,12 @@ async function main() {
 
   console.log(values)
 
+  console.log(await mockUSDC.read.balanceOf(["0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"]))
+
+  console.log(await USDCPaymaster.read.eip712Domain())
+
+  console.log(await mockUSDC.read.eip712Domain())
+
 
 }
 

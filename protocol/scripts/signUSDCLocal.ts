@@ -14,6 +14,9 @@ const amount = parseEther("1000", "wei")
 const maxFee = parseEther("1", "wei")
 const amountWithFee = (amount + maxFee).toString()
 
+console.log(amount)
+console.log(maxFee)
+
 const deadline = BigInt("100000000000000")
 
 async function main() {
@@ -29,7 +32,7 @@ async function main() {
     name: await USDC.read.name(),
     version: "1",
     verifyingContract: usdc,
-    chainId: 1337
+    chainId: 31337
   }
 
   const domainInfo = await USDCPaymaster.read.eip712Domain()
@@ -37,11 +40,11 @@ async function main() {
   const domain2 : IDomain = {
     name: domainInfo[1],
     version: domainInfo[2],
-    verifyingContract: domainInfo[4],
-    chainId: 1337
+    verifyingContract: usdcPaymaster,
+    chainId: Number(domainInfo[5])
   }
 
-  const balance = await USDC.read.balanceOf([user])
+  console.log({domain2})
 
   const signatures = await createPermit(
     user, 
@@ -61,8 +64,6 @@ async function main() {
   )
 
   console.log({signatures, tx_signatures})
-
-  console.log(balance)
 
 }
 
