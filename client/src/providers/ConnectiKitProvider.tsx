@@ -14,7 +14,7 @@ const config = createConfig(
       // RPC URL for each chain
       [bscTestnet.id]: fallback([
         http(
-          `https://go.getblock.io/fa9c3b8a855d4dd5b786ece5594b8190`,
+          `https://bsc-testnet.public.blastapi.io`,
         ),
       ]),
       [localhost.id]: fallback([
