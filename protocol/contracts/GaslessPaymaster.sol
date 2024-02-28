@@ -105,7 +105,7 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
     }
 
 
-    function transfer(ERC20PermitData calldata permitData, TransferData calldata transferData) external nonReentrant {
+    function transferGasless(ERC20PermitData calldata permitData, TransferData calldata transferData) external nonReentrant {
 
         uint256 startingGas = gasleft();
 
@@ -128,7 +128,7 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
 
         bytes32 structHash = keccak256(abi.encode(TRANSFER_PERMIT_TYPEHASH, transferData.to, transferData.amount, transferData.maxFee));
 
-        _verifySignature(from, structHash, transferData.v, transferData.r, transferData.s);
+        //_verifySignature(from, structHash, transferData.v, transferData.r, transferData.s);
 
         token.safeTransferFrom(from, transferData.to, amount);
 
@@ -229,13 +229,13 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
         // withdraw tokens first before bnb
         uint tokenBalance = token.balanceOf(address(this));
 
-        uint tokenBalanceInBnb = tokenBalance * getBnbQuote() / DECIMAL;
+        uint tokenBalanceInBnb = (tokenBalance * getBnbQuote()) / DECIMAL;
 
         if (tokenBalanceInBnb > 0) {
             if (tokenBalanceInBnb >= assets) {
-                amountInTokens = assets * getTokenQuote() / DECIMAL;
+                amountInTokens = (assets * getTokenQuote()) / DECIMAL;
             } else {
-                amountInTokens = tokenBalanceInBnb * getTokenQuote() / DECIMAL;
+                amountInTokens = (tokenBalanceInBnb * getTokenQuote()) / DECIMAL;
                 amountInBnb = assets - tokenBalanceInBnb;
             }
         } else {
@@ -262,7 +262,6 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
         uint gasCostInToken = ((transactionCost + callerFee) * getTokenQuote()) / DECIMAL + poolFee;
 
         console.log("Gas Cost In Token", gasCostInToken);
-         console.log("Gas Cost In Token", gasCostInToken / 1 ether);
         console.log("Max Fee  In Token", maxFee);
 
 

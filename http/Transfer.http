@@ -3,13 +3,13 @@ POST http://localhost:3000/api/transfers
 {
     "sender": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
     "to": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",   
-    "permitSignature": "string",
-    "transactionSignature": "string",
-    "amount": "10000000000000000000000",
-    "fee": "1000000000000000000",            
+    "permitSignature":      "0x794c06448c36e5af4a4f21e3a4ddded7958ce6d28761d0c41c0ffa7864d3f708526460ee96d164987586656a0649aa3425d0983bc3370a16ede620ee38e047e61c",
+    "transactionSignature": "0xd384b869affa15e63c5016070f26a284de36d6c5cd279e63ae53de18c1582ec659a0bb6195243af1fd2cb2e3d2c85f883b92caeb8d84103b1bebe998978d1c651c",
+    "amount": "1000000000000000000000",
+    "fee":    "1000000000000000000",            
     "nonce": "0",
-    "paymasterAddress": "Address",
-    "deadline": 2000000000
+    "paymasterAddress": "0x61c36a8d610163660E21a8b7359e1Cac0C9133e1",
+    "deadline": "100000000000000"
 }
 
 

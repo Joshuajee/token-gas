@@ -4,6 +4,8 @@ import { deployPriceAggregator } from "./mockHelper";
 
 async function main() {
 
+  const value = parseEther("100", "wei")
+
   const { bnbPriceFeeds, usdcPriceFeeds, daiPriceFeeds } = await deployPriceAggregator()
 
   const mockUSDC = await hre.viem.deployContract("MockERC20WithPermit", ["USDC", "USDC"])
@@ -23,7 +25,22 @@ async function main() {
 
   console.log("Gasless Factory: ", GaslessFactory.address)
 
+  const USDCPaymaster = await hre.viem.getContractAt("GaslessPaymaster", values[0].payMaster)
+
+  await USDCPaymaster.write.deposit(["0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"], { value: value })
+
+  const DAIPaymaster = await hre.viem.getContractAt("GaslessPaymaster", values[1].payMaster)
+
+  await DAIPaymaster.write.deposit(["0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"], { value: value })
+
+
   console.log(values)
+
+  console.log(await mockUSDC.read.balanceOf(["0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"]))
+
+  console.log(await USDCPaymaster.read.eip712Domain())
+
+  console.log(await mockUSDC.read.eip712Domain())
 
 
 }

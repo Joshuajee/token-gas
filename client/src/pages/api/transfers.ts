@@ -1,6 +1,7 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
-import { ITransactions } from "@/lib/interfaces";
+import { ITransactionDetails, ITransactions } from "@/lib/interfaces";
 import prisma from "@/lib/prisma";
+import { transfer } from "@/lib/transactions";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 type Data = {
@@ -10,12 +11,20 @@ type Data = {
 
 export default async function handler(req: NextApiRequest,res: NextApiResponse<Data>) {
 
-  const body = JSON.parse(req.body) //as ITransactions
+  const body = JSON.parse(req.body) as ITransactions
 
   const { 
     sender, to, permitSignature, transactionSignature,
     amount, fee, nonce, paymasterAddress, deadline,
   } = body
+
+  const transactionDetails : ITransactionDetails = {
+    sender,
+    amount,
+    maxFee: fee,
+    deadline,
+    receiver: to
+  } 
 
   try {
 
@@ -33,8 +42,13 @@ export default async function handler(req: NextApiRequest,res: NextApiResponse<D
       }
     })
 
+    await transfer(paymasterAddress, permitSignature, transactionSignature, transactionDetails)
+
   } catch (e) {
+    //await prisma.$connect()
+    console.error(e)
     res.status(400).json({status: "error", message: (e as any)?.message})
+    
   }
   
   res.status(200).json({status: "success", message: "done"});
