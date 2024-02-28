@@ -120,8 +120,9 @@ describe("GaslessPaymaster ", function () {
 
         const callerInitialBalance = await publicClient.getBalance({address: caller.account.address})
 
-        await GaslessPaymaster.write.transferGasless([permitData, transferData])
+        const info = await GaslessPaymaster.write.transferGasless([permitData, transferData])
 
+        console.log({info})
         // Recipient Balance should be equal to amount before after
         expect(await mockERC20WithPermit.read.balanceOf([user3.account.address])).to.be.equal(recipientBalInitial + amount)
 

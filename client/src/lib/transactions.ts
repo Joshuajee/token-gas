@@ -6,14 +6,10 @@ import { ITransactionDetails } from "./interfaces"
 export const transfer = async (paymasterAddress: Address, permitSignature: string, transferSignature: string, transactionDetails: ITransactionDetails) => {
 
     const { sender, receiver, amount, deadline, maxFee } = transactionDetails
-  
-    console.log({maxFee})
     
     const decodePermit = decodeSignature(permitSignature)
   
     const decodeTransfer = decodeSignature(transferSignature)
-
-    console.log(transferSignature == permitSignature)
   
     const permitData = [
       sender,
@@ -33,16 +29,8 @@ export const transfer = async (paymasterAddress: Address, permitSignature: strin
       decodeTransfer.s
     ]
   
-  
-    console.log(permitData, transferData)
-  
-  
     const { GaslessPaymaster } = await getPaymaster(paymasterAddress)
   
-    // console.log(await GaslessPaymaster.read.eip712Domain())
+    return await GaslessPaymaster.write.transferGasless([permitData, transferData])
   
-    console.log(await GaslessPaymaster.read.totalAssets())
-  
-    await GaslessPaymaster.write.transferGasless([permitData, transferData])
-  
-  }
+}
