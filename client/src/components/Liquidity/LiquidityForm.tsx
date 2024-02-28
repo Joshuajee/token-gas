@@ -34,9 +34,10 @@ import { GiCoinsPile } from "react-icons/gi";
 import { paymaster } from '@/lib/paymasters';
 import { parseEther } from 'viem';
 import paymasterAbi from "@abi/contracts/GaslessPaymaster.sol/GaslessPaymaster.json"
-import { useWriteContract } from 'wagmi'
+import { useAccount, useContractWrite, useWriteContract } from 'wagmi'
 
 export default function LiquidityForm() {
+    const { address } = useAccount()
     const { writeContract } = useWriteContract()
 
     //define form
@@ -62,17 +63,17 @@ export default function LiquidityForm() {
         console.log("🚀 ~ onDeposit ~ selectedPaymaster:", selectedPaymaster)
         const weiValue = parseEther(values.amount, "wei")
         try {
-            const tx = await writeContract({
+            const tx = writeContract({
                 address: selectedPaymaster,
-                //@ts-ignore
-                paymasterAbi,
+                abi: paymasterAbi,
                 functionName: 'deposit',
-                args: [
-                    weiValue
-                ],
+            
+                args: [address],
                 //@ts-ignore
                 value: weiValue,
             })
+
+            console.log(tx)
         } catch (error) {
             console.log("🚀 ~ onDeposit ~ error:", error)
 
