@@ -1,11 +1,11 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { Address, createWalletClient, getContract, http, parseEther } from "viem";
-import { ITransactionDetails } from "./interfaces";
-import { hardhat, mainnet } from "viem/chains";
+import { Address, createWalletClient, custom, getContract, http, parseEther } from "viem";
+import { hardhat, bscTestnet } from "viem/chains";
 import { privateKeyToAccount } from 'viem/accounts'
 import { EXECUTOR_PRIVATE_KEY } from "./constants";
 import GaslessPaymasterAbi from "../abi/contracts/GaslessPaymaster.sol/GaslessPaymaster.json";
+
 
 
 export function cn(...inputs: ClassValue[]) {
@@ -87,9 +87,13 @@ export async function createTransferPermit(owner: Address, to: Address, value: S
 
 const signWithSignature = async (owner: Address, dataToSign: any) => {
 
-  const signature =  ""
+  const client = createWalletClient({
+    account: owner,
+    chain: hardhat,
+    transport: custom(window?.ethereum!)
+  })
 
-  // const signature =  await (await viem.createClient(owner)).signTypedData(dataToSign)
+  const signature = await client.signTypedData(dataToSign)
 
   const pureSig = signature.replace("0x", "")
 
@@ -139,9 +143,5 @@ export const getPaymaster = async (paymasterAddress: Address) => {
     client: client,
   })
 
-  return {GaslessPaymaster, client, account }
-}
-
-const stripAddress = (address: Address) => {
-  return address.replace("0x", "")
+  return {  GaslessPaymaster, client, account }
 }

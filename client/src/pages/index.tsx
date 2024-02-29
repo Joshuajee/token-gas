@@ -16,11 +16,32 @@ import { FaGear } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
+import { useEffect } from "react";
+import { createPermit  } from "@/lib/utils";
 
 
 export default function Home() {
+
+    async function name() {
+
+      const domain = {
+        name: 'USDC',
+        version: "1",
+        chainId: 31337,
+        verifyingContract: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+      }
+    
+      const sign = await createPermit(
+        "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", "0x70997970C51812dc3A010C7d01b50e0d17dc79C8", 
+        "10000000000000000","0", "10000000000", domain
+      )
+
+      console.log({sign})
+    }
+
+
   return (
-    <main className="h-screen">
+    <main onClick={name} className="h-screen">
       <Nav />
       <section className="h-[90%] flex flex-col gap-8 justify-center">
         {/* <div className="h-[50%] flex justify-center gap-6 ">
