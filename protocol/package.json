@@ -7,7 +7,7 @@
   "scripts": {
     "start": "hardhat node",
     "test": "hardhat --network localhost test",
-    "deploy": "hardhat run --network bsc-testnet scripts/deploy.ts",
+    "deploy": "hardhat run --network bscTestnet scripts/deploy.ts",
     "deploy-local": "hardhat run --network localhost scripts/deployLocal.ts",
     "deploy-local-fork": "hardhat run --network hardhat scripts/deployLocal.ts",
     "sign-local": "hardhat run --network localhost scripts/signUSDCLocal.ts",

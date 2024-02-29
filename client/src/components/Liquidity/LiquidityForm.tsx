@@ -1,4 +1,5 @@
-import React from 'react'
+"use client"
+import React, { useEffect } from 'react'
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod";
@@ -32,61 +33,110 @@ import { Button } from '../ui/button'
 import { liquiditySchema } from '@/validators/transactions';
 import { GiCoinsPile } from "react-icons/gi";
 import { paymaster } from '@/lib/paymasters';
-import { parseEther } from 'viem';
+import { formatEther, parseEther } from 'viem';
 import paymasterAbi from "@abi/contracts/GaslessPaymaster.sol/GaslessPaymaster.json"
-import { useAccount, useContractWrite, useWriteContract } from 'wagmi'
+import { useAccount, useWriteContract } from 'wagmi'
+import { useReadContract } from 'wagmi'
 
 export default function LiquidityForm() {
     const { address } = useAccount()
-    const { writeContract } = useWriteContract()
+    const { writeContract, isSuccess: depositSuccess, isError: depositError } = useWriteContract()
 
     //define form
-    const depositForm = useForm<z.infer<typeof liquiditySchema>>({
+    const form = useForm<z.infer<typeof liquiditySchema>>({
         resolver: zodResolver(liquiditySchema),
         defaultValues: {
-            amount: ""
-        },
-    })
-    const withdrawalForm = useForm<z.infer<typeof liquiditySchema>>({
-        resolver: zodResolver(liquiditySchema),
-        defaultValues: {
-            amount: ""
+            amount: "",
+            pool: "usdc"
         },
     })
 
-    const onDeposit = async (values: z.infer<typeof liquiditySchema>) => {
-        // Do something with the form values.
-        // ✅ This will be type-safe and validated.
-        console.log(values);
-        // @ts-ignore
-        const selectedPaymaster = paymaster[values.pool]
-        console.log("🚀 ~ onDeposit ~ selectedPaymaster:", selectedPaymaster)
-        const weiValue = parseEther(values.amount, "wei")
-        try {
-            const tx = writeContract({
-                address: selectedPaymaster,
-                abi: paymasterAbi,
-                functionName: 'deposit',
-            
-                args: [address],
-                //@ts-ignore
-                value: weiValue,
-            })
 
-            console.log(tx)
-        } catch (error) {
-            console.log("🚀 ~ onDeposit ~ error:", error)
+    const { data: totalAsset, refetch: refetchTotalAsset } = useReadContract({
+        abi: paymasterAbi,
+        address: (paymaster as any)[form.getValues().pool],
+        functionName: 'totalAssets',
+        account: address
+    })
+    const { data: lpData, refetch: refetchLpData } = useReadContract({
+        abi: paymasterAbi,
+        address: (paymaster as any)[form.getValues().pool],
+        functionName: 'balanceOf',
+        account: address,
+        args: [address]
+    })
 
+
+
+
+    const handleDepsits = async () => {
+        const values = form.getValues()
+        if (Number(values.amount) > 0 && values.pool.length > 0) {
+            const selectedPaymaster = (paymaster as any)[values.pool]
+            console.log("🚀 ~ onDeposit ~ selectedPaymaster:", selectedPaymaster)
+            const weiValue = parseEther(values.amount, "wei")
+            try {
+                const tx = await writeContract({
+                    address: selectedPaymaster,
+                    abi: paymasterAbi,
+                    functionName: 'deposit',
+                    args: [address],
+                    //@ts-ignore
+                    value: weiValue,
+
+                })
+
+            } catch (error) {
+                console.log("🚀 ~ onDeposit ~ error:", error)
+
+            }
         }
+
+    }
+    const handleWithdrawals = async () => {
+        const values = form.getValues()
+        if (Number(values.amount) > 0 && values.pool.length > 0) {
+            const selectedPaymaster = (paymaster as any)[values.pool]
+            console.log("🚀 ~ handleWithdrawals ~ selectedPaymaster:", selectedPaymaster)
+            const weiValue = parseEther(values.amount, "wei")
+            try {
+                const tx = await writeContract({
+                    address: selectedPaymaster,
+                    abi: paymasterAbi,
+                    functionName: 'withdraw',
+                    args: [weiValue, address, address],
+
+                })
+
+            } catch (error) {
+                console.log("🚀 ~ onDeposit ~ error:", error)
+
+            }
+        }
+
     }
 
+    useEffect(() => {
 
+        //* Refetch balances from current token
+        refetchLpData()
+        refetchTotalAsset()
 
-    const onWithdraw = (values: z.infer<typeof liquiditySchema>) => {
-        // Do something with the form values.
-        // ✅ This will be type-safe and validated.
-        console.log(values)
-    }
+    }, [form.getValues])
+
+    useEffect(() => {
+
+        if (depositSuccess) {
+            console.log("🚀 ~ useEffect ~ depositSuccess:", depositSuccess)
+            form.reset()
+        } else if (depositError) {
+            console.log("🚀 ~ useEffect ~ depositError:", depositError)
+        }
+
+        //* Refetch balances from current token
+        refetchLpData()
+        refetchTotalAsset()
+    }, [depositSuccess, depositError])
     return (
         <Card className="w-full max-w-[400px] shadow-md">
             <CardHeader>
@@ -105,12 +155,12 @@ export default function LiquidityForm() {
                             Total
                         </div>
                         <div className='h-[50%] flex justify-center items-center text-md font-semibold'>
-                            1.1023
+                            {typeof totalAsset == "bigint" && formatEther(totalAsset)}
                         </div>
                     </div>
                     <div className='border-r'>
                         <div className='h-[50%] flex justify-center items-center text-xs font-semibold text-muted-foreground'>
-                            DAI
+                            Share
                         </div>
                         <div className='h-[50%] flex justify-center items-center text-md font-semibold'>
                             1.1023
@@ -118,19 +168,20 @@ export default function LiquidityForm() {
                     </div>
                     <div className=''>
                         <div className='h-[50%] flex justify-center items-center text-xs font-semibold text-muted-foreground'>
-                            USDC
+                            Balance
                         </div>
                         <div className='h-[50%] flex justify-center items-center text-md font-semibold'>
-                            1.1023
+                            {typeof lpData == "bigint" && Number(formatEther(lpData)).toFixed(4)}
                         </div>
                     </div>
+
                 </div>
                 <div className='flex flex-col gap-4'>
-                    <Form {...depositForm}>
-                        <form onSubmit={depositForm.handleSubmit(onDeposit)} className="space-y-4">
+                    <Form {...form}>
+                        <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
                             <div className=''>
                                 <FormField
-                                    control={depositForm.control}
+                                    control={form.control}
                                     name="pool"
                                     render={({ field }: { field: any }) => (
                                         <FormItem>
@@ -156,7 +207,7 @@ export default function LiquidityForm() {
                             <div className=''>
                                 <FormField
 
-                                    control={depositForm.control}
+                                    control={form.control}
                                     name="amount"
                                     render={({ field }: { field: any }) => (
                                         <FormItem>
@@ -173,40 +224,15 @@ export default function LiquidityForm() {
                                 />
                             </div>
 
-                            <div className='flex w-full justify-end'>
-                                <Button type="submit" className='w-full'>Deposit</Button>
+                            <div className='flex w-full gap-3 justify-end'>
+                                <Button variant={'secondary'} onClick={handleWithdrawals} type="submit" className='w-1/2'>Withdraw</Button>
+                                <Button onClick={handleDepsits} type="submit" className='w-1/2'>Deposit</Button>
                             </div>
                         </form>
                     </Form>
 
 
-                    <Form {...withdrawalForm}>
-                        <form onSubmit={withdrawalForm.handleSubmit(onWithdraw)} className="space-y-4">
 
-                            <div className=''>
-                                <FormField
-
-                                    control={withdrawalForm.control}
-                                    name="amount"
-                                    render={({ field }: { field: any }) => (
-                                        <FormItem>
-                                            <FormControl>
-                                                <Input type='number' required step={0.000000000000000001} placeholder="enter amount to withdraw" {...field} />
-                                            </FormControl>
-                                            {/* <FormDescription>
-                                        Gas fee will be charged on the selected token
-
-                                    </FormDescription> */}
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                            <div className='flex w-full justify-end'>
-                                <Button variant={'secondary'} type="submit" className='w-full'>Withdraw</Button>
-                            </div>
-                        </form>
-                    </Form>
                 </div>
 
             </CardContent>
