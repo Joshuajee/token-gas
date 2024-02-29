@@ -1,27 +1,41 @@
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
-import { Address, createWalletClient, custom, getContract, http, parseEther } from "viem";
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+import {
+  Address,
+  createPublicClient,
+  createWalletClient,
+  custom,
+  getContract,
+  http,
+  parseEther,
+} from "viem";
 import { hardhat, bscTestnet } from "viem/chains";
-import { privateKeyToAccount } from 'viem/accounts'
+import { privateKeyToAccount } from "viem/accounts";
 import { EXECUTOR_PRIVATE_KEY } from "./constants";
 import GaslessPaymasterAbi from "../abi/contracts/GaslessPaymaster.sol/GaslessPaymaster.json";
-
-
+import MockERC20Abi from "@/abi/contracts/mocks/MockERC20WithPermit.sol/MockERC20WithPermit.json";
+import PaymasterAbi from "@/abi/contracts/GaslessPaymaster.sol/GaslessPaymaster.json";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 export interface IDomain {
-    name: string,
-    version: string,
-    verifyingContract: Address,
-    chainId: number
+  name: string;
+  version: string;
+  verifyingContract: Address;
+  chainId: number;
 }
 
-export async function createPermit(owner: Address, spender: Address, value: String, nonce: String, deadline: String, domain: IDomain) {
-
-  const permit = { owner, spender, value, nonce, deadline }
+export async function createPermit(
+  owner: Address,
+  spender: Address,
+  value: String,
+  nonce: String,
+  deadline: String,
+  domain: IDomain
+) {
+  const permit = { owner, spender, value, nonce, deadline };
 
   const Permit = [
     { name: "owner", type: "address" },
@@ -29,119 +43,176 @@ export async function createPermit(owner: Address, spender: Address, value: Stri
     { name: "value", type: "uint256" },
     { name: "nonce", type: "uint256" },
     { name: "deadline", type: "uint256" },
-  ]
+  ];
 
   const domainType = [
-    { name: 'name', type: 'string' },
-    { name: 'version', type: 'string' },
-    { name: 'chainId', type: 'uint256' },
-    { name: 'verifyingContract', type: 'address' },
-  ]
+    { name: "name", type: "string" },
+    { name: "version", type: "string" },
+    { name: "chainId", type: "uint256" },
+    { name: "verifyingContract", type: "address" },
+  ];
 
-  const dataToSign : any = {
+  const dataToSign: any = {
     types: {
       EIP712Domain: domainType,
-      Permit: Permit
+      Permit: Permit,
     },
     domain: domain,
     primaryType: "Permit",
-    message: permit
-  }
+    message: permit,
+  };
 
-  return await signWithSignature(owner, dataToSign)
-
+  return await signWithSignature(owner, dataToSign);
 }
 
-
-
-export async function createTransferPermit(owner: Address, to: Address, value: String, maxFee: String, domain: IDomain) {
-
-  const permit = { to, amount: value, maxFee }
+export async function createTransferPermit(
+  owner: Address,
+  to: Address,
+  value: String,
+  maxFee: String,
+  domain: IDomain
+) {
+  const permit = { to, amount: value, maxFee };
 
   const Permit = [
     { name: "to", type: "address" },
     { name: "amount", type: "uint256" },
     { name: "maxFee", type: "uint256" },
-  ]
+  ];
 
   const domainType = [
-    { name: 'name', type: 'string' },
-    { name: 'version', type: 'string' },
-    { name: 'chainId', type: 'uint256' },
-    { name: 'verifyingContract', type: 'address' },
-  ]
+    { name: "name", type: "string" },
+    { name: "version", type: "string" },
+    { name: "chainId", type: "uint256" },
+    { name: "verifyingContract", type: "address" },
+  ];
 
-  const dataToSign : any = {
+  const dataToSign: any = {
     types: {
       EIP712Domain: domainType,
-      Permit: Permit
+      Permit: Permit,
     },
     domain: domain,
     primaryType: "Permit",
-    message: permit
-  }
+    message: permit,
+  };
 
-  return await signWithSignature(owner, dataToSign)
-
+  return await signWithSignature(owner, dataToSign);
 }
 
 const signWithSignature = async (owner: Address, dataToSign: any) => {
-
   const client = createWalletClient({
     account: owner,
     chain: hardhat,
-    transport: custom(window?.ethereum!)
-  })
+    transport: custom(window?.ethereum!),
+  });
 
-  const signature = await client.signTypedData(dataToSign)
+  const signature = await client.signTypedData(dataToSign);
 
-  const pureSig = signature.replace("0x", "")
+  const pureSig = signature.replace("0x", "");
 
-  const r = Buffer.from(pureSig.substring(0, 64), 'hex')
-  const s = Buffer.from(pureSig.substring(64, 128), 'hex')
-  const v = Buffer.from((parseInt(pureSig.substring(128, 130), 16)).toString());
+  const r = Buffer.from(pureSig.substring(0, 64), "hex");
+  const s = Buffer.from(pureSig.substring(64, 128), "hex");
+  const v = Buffer.from(parseInt(pureSig.substring(128, 130), 16).toString());
 
   return {
-    r: "0x" + r.toString('hex'), 
-    s: "0x" + s.toString('hex'), 
-    v: parseInt(v.toString()), 
-    signature
-  }
-}
+    r: "0x" + r.toString("hex"),
+    s: "0x" + s.toString("hex"),
+    v: parseInt(v.toString()),
+    signature,
+  };
+};
 
+export const getTokenDomain = async (contract: Address, owner: Address) => {
+  const publicClient = createPublicClient({
+    chain: hardhat,
+    transport: http(),
+  });
+
+  const tokenDomainInfo = await publicClient.readContract({
+    address: contract,
+    abi: MockERC20Abi,
+    functionName: "eip712Domain",
+  });
+  //console.log("🚀 ~ getTokenDomain ~ tokenDomainInfo:", tokenDomainInfo);
+  return tokenDomainInfo;
+};
+
+export const getPaymasterDomain = async (contract: Address) => {
+  const publicClient = createPublicClient({
+    chain: hardhat,
+    transport: http(),
+  });
+
+  const paymasterDomainInfo = await publicClient.readContract({
+    address: contract,
+    abi: PaymasterAbi,
+    functionName: "eip712Domain",
+  });
+
+  return paymasterDomainInfo;
+};
+
+export const getTokenNonce = async (contract: Address, owner: Address) => {
+  const publicClient = createPublicClient({
+    chain: hardhat,
+    transport: http(),
+  });
+
+  const nonce = await publicClient.readContract({
+    address: contract,
+    abi: MockERC20Abi,
+    functionName: "nonces",
+    args: [owner],
+  });
+  // console.log("🚀 ~ getTokenNonce ~ nonce:", nonce);
+  return nonce;
+};
+
+export const getMaxFee = async (contract: Address) => {
+  const publicClient = createPublicClient({
+    chain: hardhat,
+    transport: http(),
+  });
+
+  const maxFee = await publicClient.readContract({
+    address: contract,
+    abi: PaymasterAbi,
+    functionName: "estimateFees",
+    args: [0, 10365794880n],
+  });
+
+  return maxFee;
+};
 
 export const decodeSignature = (signature: string) => {
+  const pureSig = signature.replace("0x", "");
 
-  const pureSig = signature.replace("0x", "")
-
-  const r = Buffer.from(pureSig.substring(0, 64), 'hex')
-  const s = Buffer.from(pureSig.substring(64, 128), 'hex')
-  const v = Buffer.from((parseInt(pureSig.substring(128, 130), 16)).toString());
+  const r = Buffer.from(pureSig.substring(0, 64), "hex");
+  const s = Buffer.from(pureSig.substring(64, 128), "hex");
+  const v = Buffer.from(parseInt(pureSig.substring(128, 130), 16).toString());
 
   return {
-    r: "0x" + r.toString('hex'), 
-    s: "0x" + s.toString('hex'), 
-    v: parseInt(v.toString()), 
-  }
-
-}
-
+    r: "0x" + r.toString("hex"),
+    s: "0x" + s.toString("hex"),
+    v: parseInt(v.toString()),
+  };
+};
 
 export const getPaymaster = async (paymasterAddress: Address) => {
+  const account = privateKeyToAccount(EXECUTOR_PRIVATE_KEY);
 
-  const account = privateKeyToAccount(EXECUTOR_PRIVATE_KEY) 
- 
   const client = createWalletClient({
     account,
     chain: hardhat,
-    transport: http()
-  })
+    transport: http(),
+  });
 
-  const GaslessPaymaster =  getContract({
+  const GaslessPaymaster = getContract({
     address: paymasterAddress,
     abi: GaslessPaymasterAbi,
     client: client,
-  })
+  });
 
-  return {  GaslessPaymaster, client, account }
-}
+  return { GaslessPaymaster, client, account };
+};

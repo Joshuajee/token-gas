@@ -9,30 +9,37 @@ type Data = {
   message: string;
 };
 
-export default async function handler(req: NextApiRequest,res: NextApiResponse<Data>) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<Data>
+) {
+  const body = req.body as ITransactions;
+  const {
+    sender,
+    to,
+    permitSignature,
+    transactionSignature,
+    amount,
+    fee,
+    nonce,
+    paymasterAddress,
+    deadline,
+  } = body;
 
-  const body = JSON.parse(req.body) as ITransactions
-
-  const { 
-    sender, to, permitSignature, transactionSignature,
-    amount, fee, nonce, paymasterAddress, deadline,
-  } = body
-
-  const transactionDetails : ITransactionDetails = {
+  const transactionDetails: ITransactionDetails = {
     sender,
     amount,
     maxFee: fee,
     deadline,
-    receiver: to
-  } 
+    receiver: to,
+  };
 
   let hash = "";
 
   try {
-
     await prisma.transactions.create({
-      data: { 
-        sender, 
+      data: {
+        sender,
         to,
         permitSignature,
         transactionSignature,
@@ -40,46 +47,48 @@ export default async function handler(req: NextApiRequest,res: NextApiResponse<D
         fee,
         nonce,
         paymasterAddress,
-        deadline
-      }
-    })
+        deadline,
+      },
+    });
 
-    hash = await transfer(paymasterAddress, permitSignature, transactionSignature, transactionDetails)
+    hash = await transfer(
+      paymasterAddress,
+      permitSignature,
+      transactionSignature,
+      transactionDetails
+    );
 
     await prisma.transactions.updateMany({
       where: {
         sender,
         permitSignature,
         transactionSignature,
-        paymasterAddress
+        paymasterAddress,
       },
       data: {
         status: "SUCCESS",
-        txHash: hash
-      }
-    })
-
+        txHash: hash,
+      },
+    });
   } catch (e) {
+    console.error(e);
 
-    console.error(e)
+    await prisma.$disconnect();
 
-    await prisma.$disconnect()
-
-    res.status(400).json({status: "error", message: (e as any)?.message})
+    res.status(400).json({ status: "error", message: (e as any)?.message });
   }
 
-  await prisma.$disconnect()
-  
-  res.status(200).json({status: "success", message: hash });
-}
+  await prisma.$disconnect();
 
+  res.status(200).json({ status: "success", message: hash });
+}
 
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: '1mb',
+      sizeLimit: "1mb",
     },
   },
   // Specifies the maximum allowed duration for this function to execute (in seconds)
   maxDuration: 360,
-}
+};

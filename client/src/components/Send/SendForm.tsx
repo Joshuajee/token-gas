@@ -32,9 +32,16 @@ import {
 import { Button } from '../ui/button'
 import { erc20Schema } from '@/validators/transactions';
 import { PiCoinVerticalThin } from 'react-icons/pi';
+import { tokens } from '@/lib/tokens';
+import { IDomain, createPermit, createTransferPermit, getMaxFee, getPaymasterDomain, getTokenDomain, getTokenNonce } from '@/lib/utils';
+import { useAccount } from 'wagmi';
+import { paymaster } from '@/lib/paymasters';
+import { Address, parseEther } from 'viem';
+import { ITransactions } from '@/lib/interfaces';
 
 
 export default function SendForm() {
+    const { address } = useAccount()
 
     //define form
     const form = useForm<z.infer<typeof erc20Schema>>({
@@ -42,15 +49,118 @@ export default function SendForm() {
         defaultValues: {
             token: "",
             receiver: "",
-            amount: 0
+            amount: ""
         },
     })
 
-    const onSubmit = (values: z.infer<typeof erc20Schema>) => {
-        // Do something with the form values.
-        // ✅ This will be type-safe and validated.
-        console.log(values)
+    const send = async (sender: Address, to: Address, permitSignature: any, transactionSignature: any, amount: string, fee: string, nonce: string, paymasterAddress: Address, deadline: string) => {
+        const transaferData: ITransactions = {
+            sender,
+            to,
+            permitSignature,
+            transactionSignature,
+            amount,
+            fee,
+            nonce,
+            paymasterAddress,
+            deadline
+
+        }
+        console.log("🚀 ~ send ~ body:", transaferData)
+
+        try {
+            const response = await fetch('/api/transfers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(transaferData),
+            });
+
+            if (!response.ok) {
+                throw new Error('Something went wrong');
+            }
+
+            const data = await response.json();
+
+            form.reset()
+
+        } catch (error) {
+            console.error(error);
+        }
     }
+
+    const onSubmit = async (values: z.infer<typeof erc20Schema>) => {
+        // * get matching contract addresses
+        const selectedToken = (tokens as any)[values.token]
+        const selectedPaymaster = (paymaster as any)[values.token]
+        //* convert to wei
+        const weiValue = parseEther(values.amount, "wei")
+        //* get token domain info
+        const tokenDomainInfo: any = address && await getTokenDomain(selectedToken, address)
+
+        const tokenDomain: IDomain = {
+            name: tokenDomainInfo[1],
+            version: tokenDomainInfo[2],
+            verifyingContract: tokenDomainInfo[4],
+            chainId: Number(tokenDomainInfo[3]),
+        }
+
+        //* get nonce
+        const nonce = address && await getTokenNonce(selectedToken, address)
+
+
+        //* Get the current date and time
+        const now = new Date();
+
+        //* Calculate 1 hour from now
+        const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+
+        //* Convert the time to Unix timestamp (in seconds)
+        const unixTimestampInSeconds = Math.floor(oneHourFromNow.getTime() / 1000);
+
+        //* get max fee
+        const maxFee = address && await getMaxFee(selectedPaymaster)
+
+        //@ts-ignore
+        const amt = weiValue + maxFee
+
+        //*sign first permit
+        const tokenSignature = address && await createPermit(
+            address,
+            (paymaster as any)[values.token],
+            amt as any,
+            nonce as any,
+            unixTimestampInSeconds.toString(),
+            tokenDomain
+        )
+
+        //* get paymaster domain
+        const paymasterDomainInfo: any = address && await getPaymasterDomain(selectedPaymaster)
+
+        const paymasterDomain: IDomain = {
+            name: paymasterDomainInfo[1],
+            version: paymasterDomainInfo[2],
+            verifyingContract: paymasterDomainInfo[4],
+            chainId: Number(paymasterDomainInfo[3]),
+        }
+
+
+        //*get final signature
+        const paymasterSignature = address && await createTransferPermit(
+            address,
+            values.receiver as Address,
+            weiValue as any,
+            maxFee as any,
+            paymasterDomain
+        )
+
+        if (typeof nonce === "bigint" && typeof maxFee === "bigint") {
+
+            address && send(address, values.receiver as Address, tokenSignature?.signature, paymasterSignature?.signature, weiValue?.toString(), maxFee.toString(), nonce.toString(), selectedPaymaster, unixTimestampInSeconds.toString())
+        }
+
+    }
+
+
     return (
         <Card className="w-full max-w-[400px] shadow-md">
             <CardHeader>
@@ -79,6 +189,7 @@ export default function SendForm() {
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
+                                            <SelectItem value="dai">DAI</SelectItem>
                                             <SelectItem value="usdc">USDC</SelectItem>
 
                                         </SelectContent>
@@ -114,7 +225,7 @@ export default function SendForm() {
                                 <FormItem>
                                     <FormLabel>Amount</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="enter amount to be sent" {...field} />
+                                        <Input type='number' required step={0.000000000000000001} placeholder="enter amount to be sent" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                     <FormDescription>
