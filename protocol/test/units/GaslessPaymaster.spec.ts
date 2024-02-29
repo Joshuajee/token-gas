@@ -2,8 +2,8 @@ import {loadFixture} from "@nomicfoundation/hardhat-toolbox-viem/network-helpers
 import { expect } from "chai";
 import hre, { viem } from "hardhat";
 import { checksumAddress, parseEther } from "viem";
-import { IDomain, bnbPriceFeeds, createPermit, createTransferPermit, maxFee, swapRouterV3, usdcPriceFeeds} from "../../scripts/helper";
-import { calculatePrice } from "../../scripts/mockHelper";
+import { FeeAmount, IDomain, bnbPriceFeeds, createPermit, createTransferPermit, encodePath, maxFee, swapRouterV3, usdcPriceFeeds} from "../../scripts/helper";
+import { calculatePrice } from "../../scripts/helper";
 
 
 
@@ -26,23 +26,23 @@ describe("GaslessPaymaster ", function () {
         const tokenDomainInfo = await mockERC20WithPermit.read.eip712Domain()
 
 
-        const domain : IDomain = {
+        const domainPermit : IDomain = {
             name: tokenDomainInfo[1],
             version: tokenDomainInfo[2],
             verifyingContract: tokenDomainInfo[4],
             chainId: Number(tokenDomainInfo[3])
         }
 
-        const domainInfo = await GaslessPaymaster.read.eip712Domain()
+        const domainPermitInfo = await GaslessPaymaster.read.eip712Domain()
 
-        const domain2 : IDomain = {
-            name: domainInfo[1],
-            version: domainInfo[2],
-            verifyingContract: domainInfo[4],
-            chainId: Number(domainInfo[3])
+        const domainPermit2 : IDomain = {
+            name: domainPermitInfo[1],
+            version: domainPermitInfo[2],
+            verifyingContract: domainPermitInfo[4],
+            chainId: Number(domainPermitInfo[3])
         }
         
-        return {GaslessPaymaster, publicClient, domain, domain2, mockERC20WithPermit, user1, user2, user3, user4}
+        return {GaslessPaymaster, publicClient, domainPermit, domainPermit2, mockERC20WithPermit, user1, user2, user3, user4}
     }
 
 
@@ -58,9 +58,23 @@ describe("GaslessPaymaster ", function () {
     }
 
 
+    async function deployAndFundPancakeSwapPools() {
+
+        const deployed = await deploy()
+
+        const tokenB = await hre.viem.deployContract("MockERC20WithPermit", ["mockDAI", "mockDAI"])
+
+        const value = parseEther("1", "wei") as any
+
+        await deployed.GaslessPaymaster.write.deposit([deployed.user1.account.address],{value});
+        
+        return { ...deployed, value, tokenB }
+    }
+
+
     async function transfer(deployed: any, maxFee = parseEther("2.5", "wei")) {
 
-        const {GaslessPaymaster, publicClient, domain, domain2, mockERC20WithPermit, user1, user3 }  = deployed 
+        const {GaslessPaymaster, publicClient, domainPermit, domainPermit2, mockERC20WithPermit, user1, user3 }  = deployed 
 
         const value = parseEther("1", "wei") as any
 
@@ -84,7 +98,7 @@ describe("GaslessPaymaster ", function () {
             (amountWithFee).toString(),
             nonces.toString(), 
             deadline.toString(), 
-            domain
+            domainPermit
         )
 
         const tx_signatures = await createTransferPermit(
@@ -92,7 +106,7 @@ describe("GaslessPaymaster ", function () {
             user3.account.address,  
             amount.toString(),
             (maxFee).toString(),
-            domain2
+            domainPermit2
         )
         
         // Recipient Balance should be equal to zero before Transfer
@@ -121,6 +135,87 @@ describe("GaslessPaymaster ", function () {
         const callerInitialBalance = await publicClient.getBalance({address: caller.account.address})
 
         await GaslessPaymaster.write.transferGasless([permitData, transferData])
+
+        // Recipient Balance should be equal to amount before after
+        expect(await mockERC20WithPermit.read.balanceOf([user3.account.address])).to.be.equal(recipientBalInitial + amount)
+
+        // Amount sent should be deducted from Sender Balance
+        //expect(await mockERC20WithPermit.read.balanceOf([user1.account.address])).to.be.lessThan(balance)
+
+    
+        //
+        expect(Number(await publicClient.getBalance({address: caller.account.address}) - callerInitialBalance)).to.be.gt(Number(await GaslessPaymaster.read.callerFeeAmountInEther()))
+        
+        // check if the contract received the fee
+        //expect(await mockERC20WithPermit.read.balanceOf([GaslessPaymaster.address])).to.be.greaterThan(initialTokenBalOfProtocol)    
+
+        return { ...deployed }
+    }
+
+
+    async function swapOnPancake(deployed: any, maxFee = parseEther("2.5", "wei")) {
+
+        const {GaslessPaymaster, publicClient, domainPermit, domainPermit2, mockERC20WithPermit, user1, user3 }  = deployed 
+
+        const value = parseEther("1", "wei") as any
+
+        await deployed.GaslessPaymaster.write.deposit([deployed.user1.account.address],{value});
+                
+        const caller = user1
+
+        const nonces =  await mockERC20WithPermit.read.nonces([user1.account.address])
+
+        const amount = parseEther("1000", "wei")
+
+        const amountWithFee = amount + maxFee
+
+        const deadline = BigInt("100000000000000")
+
+        const balance = await mockERC20WithPermit.read.balanceOf([user1.account.address])
+
+        const signatures = await createPermit(
+            user1.account.address, 
+            GaslessPaymaster.address, 
+            (amountWithFee).toString(),
+            nonces.toString(), 
+            deadline.toString(), 
+            domainPermit
+        )
+
+        const tx_signatures = await createTransferPermit(
+            user1.account.address, 
+            user3.account.address,  
+            amount.toString(),
+            (maxFee).toString(),
+            domainPermit2
+        )
+        
+        // Recipient Balance should be equal to zero before Transfer
+        const recipientBalInitial = await mockERC20WithPermit.read.balanceOf([user3.account.address])
+
+        const initialTokenBalOfProtocol = await mockERC20WithPermit.read.balanceOf([GaslessPaymaster.address]);
+
+        const permitData: any = [
+            user1.account.address,
+            amount + maxFee,
+            deadline,
+            signatures.v,
+            signatures.r,
+            signatures.s
+        ]
+
+        const swapData: any = [
+            user3.account.address,
+            amount,
+            maxFee,
+            tx_signatures.v,
+            tx_signatures.r,
+            tx_signatures.s
+        ]
+
+        const callerInitialBalance = await publicClient.getBalance({address: caller.account.address})
+
+        await GaslessPaymaster.write.swapPancakeSwapGasless([permitData, swapData])
 
         // Recipient Balance should be equal to amount before after
         expect(await mockERC20WithPermit.read.balanceOf([user3.account.address])).to.be.equal(recipientBalInitial + amount)
@@ -182,7 +277,7 @@ describe("GaslessPaymaster ", function () {
 
         it("Should be able to transfer tokens", async ( ) => {
 
-            const { GaslessPaymaster, publicClient, user1, user2, user3, domain, domain2, mockERC20WithPermit } = await loadFixture(deployAndSupplyLiquidity)
+            const { GaslessPaymaster, publicClient, user1, user2, user3, domainPermit, domainPermit2, mockERC20WithPermit } = await loadFixture(deployAndSupplyLiquidity)
 
             const caller = user1
 
@@ -202,7 +297,7 @@ describe("GaslessPaymaster ", function () {
                 (amount + maxFee).toString(),
                 nonces.toString(), 
                 deadline.toString(), 
-                domain
+                domainPermit
             )
 
 
@@ -211,7 +306,7 @@ describe("GaslessPaymaster ", function () {
                 user3.account.address, 
                 amount.toString(), 
                 (maxFee).toString(),
-                domain2
+                domainPermit2
             )
             
             // Recipient Balance should be equal to zero before Transfer
@@ -380,6 +475,98 @@ describe("GaslessPaymaster ", function () {
             
         // })
 
+    })
+
+
+
+    describe("Swap Tokens",  function () {
+
+        it("Should Be able to swap tokens", async ( ) => {
+
+            const { GaslessPaymaster, user1, user3, publicClient, tokenB, mockERC20WithPermit, domainPermit, domainPermit2 } = await deployAndFundPancakeSwapPools()
+            
+            const caller = user1
+    
+            const nonces =  await mockERC20WithPermit.read.nonces([user1.account.address])
+    
+            const amountIn = parseEther("1000", "wei")
+
+            const amountOutMin = amountIn / 10n; // change later
+    
+            const amountWithFee = amountIn + maxFee
+    
+            const deadline = BigInt("100000000000000")
+    
+            const balance = await mockERC20WithPermit.read.balanceOf([user1.account.address])
+    
+            const signatures = await createPermit(
+                user1.account.address, 
+                GaslessPaymaster.address, 
+                (amountWithFee).toString(),
+                nonces.toString(), 
+                deadline.toString(), 
+                domainPermit
+            )
+    
+            const tx_signatures = await createTransferPermit(
+                user1.account.address, 
+                user3.account.address,  
+                amountWithFee.toString(),
+                (maxFee).toString(),
+                domainPermit2
+            )
+            
+            // Recipient Balance should be equal to zero before Transfer
+            const recipientBalInitial = await mockERC20WithPermit.read.balanceOf([user3.account.address])
+    
+            const initialTokenBalOfProtocol = await mockERC20WithPermit.read.balanceOf([GaslessPaymaster.address]);
+    
+            const permitData: any = [
+                user1.account.address,
+                amountWithFee,
+                deadline,
+                signatures.v,
+                signatures.r,
+                signatures.s
+            ]
+
+            // bytes path;
+            // address recipient;
+            // uint256 amountIn;
+            // uint256 amountOutMinimum;
+            // uint256 maxFee;
+    
+            const swapData: any = [
+                encodePath([mockERC20WithPermit.address, tokenB.address], [FeeAmount.MEDIUM]),
+                user3.account.address,
+                amountIn,
+                amountOutMin,
+                maxFee,
+                tx_signatures.v,
+                tx_signatures.r,
+                tx_signatures.s
+            ]
+    
+            const callerInitialBalance = await publicClient.getBalance({address: caller.account.address})
+    
+            await GaslessPaymaster.write.swapPancakeSwapGasless([permitData, swapData])
+    
+            // Recipient Balance should be equal to amount before after
+            expect(await tokenB.read.balanceOf([user3.account.address])).to.be.equal(recipientBalInitial + amountIn)
+    
+            // Amount sent should be deducted from Sender Balance
+            //expect(await mockERC20WithPermit.read.balanceOf([user1.account.address])).to.be.lessThan(balance)
+    
+        
+            //
+            expect(Number(await publicClient.getBalance({address: caller.account.address}) - callerInitialBalance)).to.be.gt(Number(await GaslessPaymaster.read.callerFeeAmountInEther()))
+            
+            // check if the contract received the fee
+            //expect(await mockERC20WithPermit.read.balanceOf([GaslessPaymaster.address])).to.be.greaterThan(initialTokenBalOfProtocol)    
+
+
+        })
+        
     })
 
 });
