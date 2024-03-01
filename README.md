@@ -1,18 +1,34 @@
-# Token Gas
+# TokenGas - Revolutionizing ERC-20 Transactions for a Seamless Binance Smart Chain Experience
 
-## Problem Statement
+## Description:
 
-Transfering tokens requires gas fees to be paid in the Native token of the blockchain in question, for example to Transfer USDC on Binance Smart Chain (BSC), requires that a user (EOA) pay gas fees in the native token of the BSC network which is BNB.
+Welcome to TokenGas, a groundbreaking project engineered to elevate the Binance Smart Chain (BSC) ecosystem. Designed with a commitment to simplicity and efficiency, TokenGas empowers users to seamlessly conduct ERC-20 transactions and cover gas fees directly with ERC-20 tokens, transforming the BSC experience.
 
-Token gas hopes to solve this by allowing users (EOA) pay for gas with the token available on their wallet. With Token Gas users (EOA), can transfer, swap and do many more with ERC20 tokens, without need to pay in native tokens, such as BNB.
+This was born out of the challenge we faced after receiving erc20 for a project we built but we could not transfer or swap the token as we did not have native tokens and hence can’t send it to any exchange.
 
-## Description
+## 🌐 TokenGas Integration for BSC Excellence:
 
-Token Gas is a decentralized protocol that allows users(EOA), to pay for Gases using ERC20 tokens instead of Bnb. Token gas does this by taking advantage of ERC20 Permit function on ERC20 token.
+TokenGas introduces a seamless integration for BSC, enabling users (EOA) to pay gas fees directly in ERC-20 tokens. This is all made possible by ERC20 Permit feature which allows approvals to be made via signatures, as defined in EIP-2612. Say goodbye to the complexities of managing different tokens and embrace a streamlined BSC transaction process.
 
-Token Gas has basically three type of users:
+## 🔥 How TokenGas Elevates BSC Transactions:
 
-- The User (EOA): This is the person that wants to transfer or swap their ERC20 token and want to pay in ERC20 token instead of Native token like BNB.
-- The Liquidity Provider: These are people that lock up native token (BNB) into a Liquidity pool (ERC4626 Vault), this native token will be used to pay for gas fees. Liquidity Providers collect the transaction cost in the user provided token. For example a user wants to transfer 100USDC, and the gas fee is 0.0025 BNB, which is about 1 USDC as at the time of writing, so the Liquidity Providers covers the gas fees of 0.0025 BNB and collect the users (EOA) token 1 USDC plus some fees, therefore earning interests.
-- The Executors: These are EOAs, anyone can become an executor, the role of executors are to send the offchain signatures to the blockchain. Executors initially pays for the transaction fee but are later refunded by the protocol with a small Fee.
-  
+- **The User (EOA):**
+  - BSC users, rejoice! TokenGas allows you to effortlessly execute ERC-20 transfers and swaps while paying gas fees with your ERC-20 tokens, enhancing the overall BSC transaction experience.
+- **The Liquidity Provider:**
+  - Native token (BNB) holders become liquidity providers by contributing to a Liquidity pool (ERC4626 Vault). These providers cover gas fees and earn transaction costs in the user-provided token, actively contributing to the BSC ecosystem.
+- **The Executors:**
+  - Anyone can be an executor within TokenGas. Facilitate off-chain signatures, initially covering transaction fees. Later, receive reimbursement plus a small fee from the protocol, ensuring the smooth operation of BSC transactions.
+
+## 🛠️ Building BSC's Future Today:
+
+TokenGas is not just a project; it's a catalyst for shaping the future of decentralized transactions within the BSC ecosystem. Join us in embracing the potential of BSC and simplifying ERC-20 transactions.
+
+## 💡 Engage with the BSC Community:
+
+Connect with TokenGas and the BSC community. Share your experiences, contribute to discussions, and be an active participant in the ongoing evolution of ERC-20 transactions within the Binance Smart Chain ecosystem.
+
+## 💡 Empower Your BSC Experience with TokenGas:
+
+Experience a new era of simplicity and efficiency in ERC-20 transactions. TokenGas is here to empower BSC users, providing a seamless and user-friendly approach to managing transactions and gas fees.
+
+**Join us in shaping the future of ERC-20 transactions within the Binance Smart Chain ecosystem with TokenGas - Your Gateway to a Seamless BSC Experience!**
