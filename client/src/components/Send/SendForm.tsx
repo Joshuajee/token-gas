@@ -38,6 +38,7 @@ import { useAccount } from 'wagmi';
 import { paymaster } from '@/lib/paymasters';
 import { Address, parseEther } from 'viem';
 import { ITransactions } from '@/lib/interfaces';
+import { toast } from 'sonner';
 
 
 export default function SendForm() {
@@ -82,9 +83,11 @@ export default function SendForm() {
             const data = await response.json();
 
             form.reset()
+            toast.success("Transfer complete.")
 
         } catch (error) {
             console.error(error);
+            toast.error("An error occurred during transaction.")
         }
     }
 
@@ -94,68 +97,72 @@ export default function SendForm() {
         const selectedPaymaster = (paymaster as any)[values.token]
         //* convert to wei
         const weiValue = parseEther(values.amount, "wei")
-        //* get token domain info
-        const tokenDomainInfo: any = address && await getTokenDomain(selectedToken, address)
+        try {
+            //* get token domain info
+            const tokenDomainInfo: any = address && await getTokenDomain(selectedToken, address)
 
-        const tokenDomain: IDomain = {
-            name: tokenDomainInfo[1],
-            version: tokenDomainInfo[2],
-            verifyingContract: tokenDomainInfo[4],
-            chainId: Number(tokenDomainInfo[3]),
-        }
+            const tokenDomain: IDomain = {
+                name: tokenDomainInfo[1],
+                version: tokenDomainInfo[2],
+                verifyingContract: tokenDomainInfo[4],
+                chainId: Number(tokenDomainInfo[3]),
+            }
 
-        //* get nonce
-        const nonce = address && await getTokenNonce(selectedToken, address)
-
-
-        //* Get the current date and time
-        const now = new Date();
-
-        //* Calculate 1 hour from now
-        const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
-
-        //* Convert the time to Unix timestamp (in seconds)
-        const unixTimestampInSeconds = Math.floor(oneHourFromNow.getTime() / 1000);
-
-        //* get max fee
-        const maxFee = address && await getMaxFee(selectedPaymaster)
-
-        //@ts-ignore
-        const amt = weiValue + maxFee
-
-        //*sign first permit
-        const tokenSignature = address && await createPermit(
-            address,
-            (paymaster as any)[values.token],
-            amt as any,
-            nonce as any,
-            unixTimestampInSeconds.toString(),
-            tokenDomain
-        )
-
-        //* get paymaster domain
-        const paymasterDomainInfo: any = address && await getPaymasterDomain(selectedPaymaster)
-
-        const paymasterDomain: IDomain = {
-            name: paymasterDomainInfo[1],
-            version: paymasterDomainInfo[2],
-            verifyingContract: paymasterDomainInfo[4],
-            chainId: Number(paymasterDomainInfo[3]),
-        }
+            //* get nonce
+            const nonce = address && await getTokenNonce(selectedToken, address)
 
 
-        //*get final signature
-        const paymasterSignature = address && await createTransferPermit(
-            address,
-            values.receiver as Address,
-            weiValue as any,
-            maxFee as any,
-            paymasterDomain
-        )
+            //* Get the current date and time
+            const now = new Date();
 
-        if (typeof nonce === "bigint" && typeof maxFee === "bigint") {
+            //* Calculate 1 hour from now
+            const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
 
-            address && send(address, values.receiver as Address, tokenSignature?.signature, paymasterSignature?.signature, weiValue?.toString(), maxFee.toString(), nonce.toString(), selectedPaymaster, unixTimestampInSeconds.toString())
+            //* Convert the time to Unix timestamp (in seconds)
+            const unixTimestampInSeconds = Math.floor(oneHourFromNow.getTime() / 1000);
+
+            //* get max fee
+            const maxFee = address && await getMaxFee(selectedPaymaster)
+
+            //@ts-ignore
+            const amt = weiValue + maxFee
+
+            //*sign first permit
+            const tokenSignature = address && await createPermit(
+                address,
+                (paymaster as any)[values.token],
+                amt as any,
+                nonce as any,
+                unixTimestampInSeconds.toString(),
+                tokenDomain
+            )
+
+            //* get paymaster domain
+            const paymasterDomainInfo: any = address && await getPaymasterDomain(selectedPaymaster)
+
+            const paymasterDomain: IDomain = {
+                name: paymasterDomainInfo[1],
+                version: paymasterDomainInfo[2],
+                verifyingContract: paymasterDomainInfo[4],
+                chainId: Number(paymasterDomainInfo[3]),
+            }
+
+
+            //*get final signature
+            const paymasterSignature = address && await createTransferPermit(
+                address,
+                values.receiver as Address,
+                weiValue as any,
+                maxFee as any,
+                paymasterDomain
+            )
+
+            if (typeof nonce === "bigint" && typeof maxFee === "bigint") {
+
+                address && send(address, values.receiver as Address, tokenSignature?.signature, paymasterSignature?.signature, weiValue?.toString(), maxFee.toString(), nonce.toString(), selectedPaymaster, unixTimestampInSeconds.toString())
+            }
+        } catch (error) {
+            toast.error("An error occurred during transaction.")
         }
 
     }

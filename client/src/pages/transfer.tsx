@@ -7,6 +7,7 @@ import { createPermit } from '@/lib/utils'
 import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
 import { TbArrowBigDownLinesFilled } from 'react-icons/tb'
+import { Toaster } from 'sonner'
 
 export default function Transfer() {
     //@ts-ignore
@@ -29,6 +30,7 @@ export default function Transfer() {
                     {data && <TransactionRecord columns={columns} data={data} />}
                 </div>
             </div>
+            <Toaster richColors />
         </main>
     )
 }

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card"
 import { PiCoinVerticalThin } from "react-icons/pi";
 import { SiBinance } from "react-icons/si";
-import { GiUnicorn } from "react-icons/gi";
+import { RiBearSmileFill } from "react-icons/ri";
 import { GiAnimalSkull } from "react-icons/gi";
 import { FaGear } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
@@ -52,22 +52,22 @@ export default function Home() {
             </CardFooter>
           </Card>
         </div> */}
-        <div className="h-[50%] flex justify-center gap-6 ">
-          <Card className="w-1/4 py-3" >
+        <div className="h-[50%] flex flex-col md:flex-row justify-center gap-6 ">
+          <Card className="w-full md:w-1/4 py-3" >
             <CardContent className="flex justify-center">
               <div className="h-32 w-32 rounded-full bg-primary flex items-center justify-center text-black">
-                <GiUnicorn size={90} />
+                <RiBearSmileFill size={90} />
               </div>
             </CardContent>
             <CardFooter className="flex flex-col justify-center gap-4">
-              <p>UniSwap Interaction</p>
+              <p>Pancake Interaction</p>
               <Button asChild>
                 <Link href="/swap">Swap</Link>
               </Button>
 
             </CardFooter>
           </Card>
-          <Card className="w-1/4 py-3" >
+          <Card className="w-full md:w-1/4 py-3" >
             <CardContent className="flex justify-center">
               <div className="h-32 w-32 rounded-full bg-primary flex items-center justify-center text-black">
                 <PiCoinVerticalThin size={100} />

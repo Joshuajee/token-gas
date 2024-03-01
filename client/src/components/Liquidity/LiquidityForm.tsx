@@ -37,6 +37,7 @@ import { formatEther, parseEther } from 'viem';
 import paymasterAbi from "@abi/contracts/GaslessPaymaster.sol/GaslessPaymaster.json"
 import { useAccount, useWriteContract } from 'wagmi'
 import { useReadContract } from 'wagmi'
+import { toast } from 'sonner';
 
 export default function LiquidityForm() {
     const { address } = useAccount()
@@ -70,6 +71,7 @@ export default function LiquidityForm() {
 
 
     const handleDepsits = async () => {
+
         const values = form.getValues()
         if (Number(values.amount) > 0 && values.pool.length > 0) {
             const selectedPaymaster = (paymaster as any)[values.pool]
@@ -85,9 +87,10 @@ export default function LiquidityForm() {
                     value: weiValue,
 
                 })
-
+                toast.success("Deposit complete")
             } catch (error) {
                 console.log("🚀 ~ onDeposit ~ error:", error)
+                toast.error("An error occurred during transaction")
 
             }
         }
@@ -107,10 +110,10 @@ export default function LiquidityForm() {
                     args: [weiValue, address, address],
 
                 })
-
+                toast.success("Withdrawal complete")
             } catch (error) {
                 console.log("🚀 ~ onDeposit ~ error:", error)
-
+                toast.error("An error occurred during transaction")
             }
         }
 
