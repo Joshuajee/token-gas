@@ -63,7 +63,6 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
     struct SwapData {
         bytes path;
         address recipient;
-        uint256 deadline;
         uint256 amountIn;
         uint256 amountOutMinimum;
         uint256 maxFee;
@@ -142,7 +141,9 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
 
         uint256 startingGas = gasleft();
 
-        uint amount = permitData.value;
+        uint amountIn = swapData.amountIn;
+
+        uint deadline = permitData.deadline;
 
         address from = permitData.owner;
 
@@ -151,24 +152,24 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
         ERC20Permit(address(token)).permit(
             from, 
             address(this),
-            amount,
-            permitData.deadline,
+            permitData.value,
+            deadline,
             permitData.v,
             permitData.r,
             permitData.s
         );
 
-        token.safeTransferFrom(from, address(this), amount);
+        token.safeTransferFrom(from, address(this), amountIn);
 
-        token.approve(address(router), amount);
+        //token.approve(address(router), amount);
 
-        router.exactInput(ISwapRouter.ExactInputParams({
-            path: swapData.path,
-            recipient: swapData.recipient,
-            deadline: swapData.deadline,
-            amountIn: swapData.amountIn,
-            amountOutMinimum: swapData.amountOutMinimum
-        }));
+        // router.exactInput(ISwapRouter.ExactInputParams({
+        //     path: swapData.path,
+        //     recipient: swapData.recipient,
+        //     deadline: deadline,
+        //     amountIn: swapData.amountIn,
+        //     amountOutMinimum: swapData.amountOutMinimum
+        // }));
  
         _payFees(caller, from, swapData.maxFee, startingGas);
 

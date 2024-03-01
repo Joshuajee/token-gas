@@ -1,9 +1,9 @@
 import {loadFixture} from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { expect } from "chai";
 import hre, { viem } from "hardhat";
-import { checksumAddress, parseEther } from "viem";
-import { IDomain, createPermit} from "../../scripts/helper";
-import { calculatePrice, deployPriceAggregator } from "../../scripts/mockHelper";
+import { checksumAddress } from "viem";
+import { bnbPriceFeeds } from "../../scripts/helper";
+
 
 describe("GaslessFactory ", function () {
 
@@ -13,36 +13,27 @@ describe("GaslessFactory ", function () {
 
         const [user1, user2, user3, user4] = await hre.viem.getWalletClients();
 
-        const priceAggregator = await deployPriceAggregator()
-
         const mockERC20WithPermit = await hre.viem.deployContract("MockERC20WithPermit", ["mockUSDC", "mockUSDC"])
 
         const GaslessFactory = await hre.viem.deployContract("GaslessFactory", [
             mockERC20WithPermit.address,
-            priceAggregator.bnbPriceFeeds.address
+            bnbPriceFeeds
         ])
 
-        return {GaslessFactory, publicClient, mockERC20WithPermit, ...priceAggregator, user1, user2, user3, user4}
+        return {GaslessFactory, publicClient, mockERC20WithPermit, user1, user2, user3, user4}
 
     }
-
-
 
     describe("Deployment",  function () {
 
         it("Should deploy with the correct Info", async () => {
 
-            const { GaslessFactory, bnbPriceFeeds } = await loadFixture(deploy)
+            const { GaslessFactory } = await loadFixture(deploy)
 
-            expect(await GaslessFactory.read.bnbPriceFeeds()).to.be.equal(checksumAddress(bnbPriceFeeds.address))
+            expect(await GaslessFactory.read.bnbPriceFeeds()).to.be.equal(checksumAddress(bnbPriceFeeds))
 
         })
 
-       
-    })
-
-
-
-   
+    })   
 
 });

@@ -1,8 +1,6 @@
-import { formatEther, parseEther, zeroAddress } from "viem";
-import hre, { network, viem } from "hardhat";
-import { deployPriceAggregator } from "./mockHelper";
-import { use } from "chai";
-import { bnbPriceFeeds, daiPriceFeeds, swapRouterV3, usdcPriceFeeds } from "./helper";
+import { parseEther } from "viem";
+import hre, { viem } from "hardhat";
+import { addLiquidityPancakeSwap, bnbPriceFeeds, createPoolPancakeSwap, daiPriceFeeds, swapRouterV3, usdcPriceFeeds } from "./helper";
 
 const user = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
 const receiver = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
@@ -16,6 +14,9 @@ async function main() {
   const mockUSDC = await hre.viem.deployContract("MockERC20WithPermit", ["USDC", "USDC"])
 
   const mockDAI = await hre.viem.deployContract("MockERC20WithPermit", ["DAI", "DAI"])
+
+  const daiAddress = mockDAI.address
+  const usdcAddress = mockUSDC.address
 
   const GaslessFactory = await hre.viem.deployContract("GaslessFactory", [
     swapRouterV3,
@@ -47,6 +48,11 @@ async function main() {
 
   console.log(await mockUSDC.read.eip712Domain())
 
+  const amount = parseEther("10000000", "wei")
+
+  await createPoolPancakeSwap(usdcAddress, daiAddress)
+
+  //await addLiquidityPancakeSwap(usdcAddress, daiAddress, amount, amount, user)
 
 }
 
