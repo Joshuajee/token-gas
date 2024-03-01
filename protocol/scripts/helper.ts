@@ -131,7 +131,7 @@ export const createPoolPancakeSwap = async (tokenA: Address, tokenB: Address) =>
 
     const nFTPMangerV3 = await viem.getContractAt("IPoolInitializer", NFTPMangerV3)
 
-    const hash = await nFTPMangerV3.write.createAndInitializePoolIfNecessary([tokenA, tokenB, FeeAmount.MEDIUM, 10n], { value: parseEther("1", "wei")})
+    const hash = await nFTPMangerV3.write.createAndInitializePoolIfNecessary([tokenA, tokenB, FeeAmount.MEDIUM, 10000000000000n])
 
     console.log(hash)
 }
@@ -144,7 +144,7 @@ export const addLiquidityPancakeSwap = async (tokenA: Address, tokenB: Address, 
 
     const deadline = Date.now()
 
-    const routerV3 = await viem.getContractAt("SwapRouter", swapRouterV3)
+    const nFTPMangerV3 = await viem.getContractAt("INonfungiblePositionManager", NFTPMangerV3)
 
     const TokenA = await viem.getContractAt("MockERC20WithPermit", tokenA)
 
@@ -154,8 +154,14 @@ export const addLiquidityPancakeSwap = async (tokenA: Address, tokenB: Address, 
 
     await TokenB.write.approve([swapRouterV3, amountBDesired])
 
-    await routerV3.write.addLiquidity([tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin, to, deadline]);
+    await nFTPMangerV3.write.mint([[
+        tokenA, tokenB, FeeAmount.MEDIUM, 0, 100000,  
+        amountADesired, amountBDesired, amountAMin, amountBMin,
+        to, deadline
+    ]])
 
+
+    
 
 }
 

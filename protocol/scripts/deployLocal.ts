@@ -1,7 +1,5 @@
-import { formatEther, parseEther, zeroAddress } from "viem";
-import hre, { network, viem } from "hardhat";
-import { deployPriceAggregator } from "./mockHelper";
-import { use } from "chai";
+import { parseEther } from "viem";
+import hre, { viem } from "hardhat";
 import { addLiquidityPancakeSwap, bnbPriceFeeds, createPoolPancakeSwap, daiPriceFeeds, swapRouterV3, usdcPriceFeeds } from "./helper";
 
 const user = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
