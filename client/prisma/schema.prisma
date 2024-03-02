@@ -30,7 +30,8 @@ model Transactions {
   fee                       String
   nonce                     String
   paymasterAddress          String
-  minAmountOut              String? // for swaps
+  amountOutMin              String? // for swaps
+  path                  String? // for swaps
   txHash                    String?
   deadline                  String
   message                   String?

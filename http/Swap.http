@@ -2,16 +2,16 @@ POST http://localhost:3000/api/swaps
 
 {
     "sender": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-    "to": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",   
-    "permitSignature": "string",
-    "transactionSignature": "string",
-    "amount": "10000000000000000000000",
+    "to": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",   
+    "permitSignature": "0xe21204cea90f2871e2607515198ed3f7eb441fc5b45c6d63f3b42518743b89d23d256b1df10331a162e3ef4f146c4ba56817a011c4d161528b094c06effe12121b",
+    "transactionSignature": "0x03666b2e02992f1b3b5639c66ebba37062fdac6213e421d3927abaf295b467213b3fd263dbbcaa2df6a1cd10637a7af568d2fe93c834e3147255aa7f259823c31c",
+    "amount":       "10000000000000000000000",
+    "amountOutMin": "1000000000000000000000",
     "fee": "1000000000000000000",            
     "nonce": "0",
-    "paymasterAddress": "Address",
-    "deadline": 2000000000,
-    "minAmountOut": "100000000000",
-    "swapPath": "kmkmkmrk"
+    "paymasterAddress": "0x07FaBe0FEF648b719b0E9EF8302Cd3037693F587",
+    "deadline": "100000000000000",
+    "path": "0x53524045cac3154b466f379797cd17a5019f438900271038d3b8c94f573c71d04a3f0f4151c37bc29b61c2"
 }
 
 

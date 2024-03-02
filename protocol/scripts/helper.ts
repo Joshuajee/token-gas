@@ -1,11 +1,7 @@
-import hre, { viem, ethers } from "hardhat";
+import hre, { viem } from "hardhat";
 import { Address, createPublicClient, createTestClient, http, parseEther } from "viem";
 import erc20Abi from '../abi/ERC20.json';
 import { hardhat } from 'viem/chains'
-import { Contract } from "ethers";
-
-
-
 
 
 
@@ -23,6 +19,10 @@ export const swapRouterV3 =   "0x1b81D678ffb9C0263b24A97847620C99d213eB14"
 export const factoryV3 =      "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865"
 export const NFTPMangerV3 =   "0x427bF5b37357632377eCbEC9de3626C71A5396c1"
 export const SwapRouterV2 =   "0xD99D1c33F9fC3444f8101754aBC46c52416550D1"
+
+
+export const usdcPaymaster = "0x07FaBe0FEF648b719b0E9EF8302Cd3037693F587"
+export const daiPaymaster  = "0xA1C9931d3695CC5fec1EE0B94D40EE32Ae12aa76"
 
 
 export const DECIMAL = parseEther("1", "wei")
@@ -119,6 +119,40 @@ export async function createTransferPermit(owner: Address, to: Address, value: S
 
 }
 
+
+export async function createSwapPermit(owner: Address, to: Address, path: string, amountIn: String, amountOutMin: string, maxFee: String, domain: IDomain) {
+
+    const permit = { to, amountIn, amountOutMinimum: amountOutMin, path, maxFee }
+
+    const Permit = [
+      { name: "to", type: "address" },
+      { name: "path", type: "bytes" },
+      { name: "amountIn", type: "uint256" },
+      { name: "amountOutMinimum", type: "uint256" },
+      { name: "maxFee", type: "uint256" },
+    ]
+
+    const domainType = [
+        { name: 'name', type: 'string' },
+        { name: 'version', type: 'string' },
+        { name: 'chainId', type: 'uint256' },
+        { name: 'verifyingContract', type: 'address' },
+    ]
+
+    const dataToSign : any = {
+        types: {
+            EIP712Domain: domainType,
+            Permit: Permit
+        },
+        domain: domain,
+        primaryType: "Permit",
+        message: permit
+    }
+
+    return await signWithSignature(owner, dataToSign)
+
+}
+
 const signWithSignature = async (owner: Address, dataToSign: any) => {
 
     const signature =  await (await viem.getWalletClient(owner)).signTypedData(dataToSign)
@@ -143,107 +177,47 @@ export const getSigner = async (account: Address) => {
 
 export const transferTokens = async () => {
 
+    const publicClient = await viem.getPublicClient()
+
     const amount = parseEther("1000", "wei")
 
-    const USDC = await ethers.getContractAt("MockERC20WithPermit", usdcAddress);
+    const USDC = await viem.getContractAt("MockERC20WithPermit", usdcAddress);
 
     const DAI  = await viem.getContractAt("MockERC20WithPermit", daiAddress);
 
-    await hre.network.provider.request({
-        method: "hardhat_impersonateAccount",
-        params: [deployer],
-    });
+    await testClient.impersonateAccount({ 
+        address: deployer
+    })
 
-    // console.log("999",MrWhale.address)
+    const walletClient =  await viem.getWalletClient(deployer)
 
-    // await USDC.connect(MrWhale).transfer(userAddress, amount)
+    await testClient.setBalance({ 
+        address: deployer,
+        value: parseEther('500000')
+    })
 
-    //await USDC.connect(deployer).tr
+    await walletClient.writeContract({
+        account: deployer,
+        address: usdcAddress,
+        abi: erc20Abi,
+        functionName: "transfer",
+        args: [userAddress, amount]
+    })
 
-    // await MrWhale.writeContract({
-    //     account: deployer,
-    //     address: usdcAddress,
-    //     abi: erc20Abi,
-    //     functionName: "transfer",
-    //     args: [userAddress, amount]
-    // })
+    await walletClient.writeContract({
+        account: deployer,
+        address: daiAddress,
+        abi: erc20Abi,
+        functionName: "transfer",
+        args: [userAddress, amount]
+    })
 
-//    const USDC = ethers.getContractAt("MockERC20WithPermit", usdcAddress)
-
-//    const contractSigner = contract.connect(MrWhale);
-
-
-
-//console.log( await USDC.connect(await ethers.getSigner(deployer)))
-
-    // await USDC.connect(await ethers.getSigner(deployer)).transfer([userAddress, amount])
-
-    //await DAI.write.transfer([userAddress, amount])
-
-
-    //console.log(await USDC.balanceOf([userAddress]))
-
-    console.log(await DAI.read.balanceOf([userAddress]))
-
-    await hre.network.provider.request({
-        method: "hardhat_stopImpersonatingAccount",
-        params: [deployer],
-    });
+    await testClient.stopImpersonatingAccount({ 
+        address: deployer
+    })
 
 }
 
-// export const createPoolPancakeSwap = async (tokenA: Address, tokenB: Address) => {
-
-//     const nFTPMangerV3 = await viem.getContractAt("IPoolInitializer", NFTPMangerV3)
-
-//     //const hash = await nFTPMangerV3.write.createAndInitializePoolIfNecessary([tokenA, tokenB, FeeAmount.MEDIUM, 10000000000000n])
-
-//     //console.log(hash)
-// }
-
-// export const addLiquidityPancakeSwap = async (tokenA: Address, tokenB: Address, amountADesired: bigint, amountBDesired: bigint, to: Address) => {
-
-//     const amountAMin = amountADesired / 10n
-
-//     const amountBMin = amountBDesired / 10n
-
-//     const deadline = 1000000000000n
-
-//     const swapRouterV2 = await viem.getContractAt("IPancakeRouter02", SwapRouterV2)
-
-//     const nFTPMangerV3 = await viem.getContractAt("INonfungiblePositionManager", NFTPMangerV3)
-
-//     const TokenA = await viem.getContractAt("MockERC20WithPermit", tokenA)
-
-//     const TokenB = await viem.getContractAt("MockERC20WithPermit", tokenB)
-
-//     await TokenA.write.approve([SwapRouterV2, amountADesired])
-
-//     await TokenB.write.approve([SwapRouterV2, amountBDesired])
-
-//     // const input = [
-//     //     tokenA, tokenB, FeeAmount.MEDIUM, 1, 1000,
-//     //     amountADesired, amountBDesired, amountAMin, amountBMin,
-//     //     to, deadline
-//     // ]
-
-//     console.log("====", await nFTPMangerV3.read.name())
-
-//     console.log(await swapRouterV2.read.factory())
-
-//     //console.log(swapRouterV2.address)
-
-// //    await swapRouterV2.write.addLiquidity([tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin, to, deadline])
-
-
-
-
-//     await swapRouterV2.write.addLiquidityETH([tokenA, amountADesired, amountAMin, amountBMin, to, deadline])
-
-
-
-//    //console.log(await swapRouterV2.read.quote([parseEther("1", "wei"), [tokenA]]))
-// }
 
 const ADDR_SIZE = 20
 const FEE_SIZE = 3

@@ -1,7 +1,7 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
-import { ITransactionDetails, ITransactions } from "@/lib/interfaces";
+import { ISwapDetails, ITransactions } from "@/lib/interfaces";
 import prisma from "@/lib/prisma";
-import { transfer } from "@/lib/transactions";
+import { swapOnPancake, transfer } from "@/lib/transactions";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 type Data = {
@@ -15,12 +15,15 @@ export default async function handler(req: NextApiRequest,res: NextApiResponse<D
 
   const { 
     sender, to, permitSignature, transactionSignature,
-    amount, fee, nonce, paymasterAddress, deadline,
+    amount, fee, nonce, paymasterAddress, deadline, 
+    amountOutMin, path
   } = body
 
-  const transactionDetails : ITransactionDetails = {
+  const swapDetails : ISwapDetails = {
     sender,
-    amount,
+    amountIn: amount,
+    amountOutMin,
+    path,
     maxFee: fee,
     deadline,
     receiver: to
@@ -40,11 +43,13 @@ export default async function handler(req: NextApiRequest,res: NextApiResponse<D
         fee,
         nonce,
         paymasterAddress,
-        deadline
+        deadline,
+        amountOutMin,
+        path
       }
     })
 
-    hash = await transfer(paymasterAddress, permitSignature, transactionSignature, transactionDetails)
+    hash = await swapOnPancake(paymasterAddress, permitSignature, transactionSignature, swapDetails)
 
     await prisma.transactions.updateMany({
       where: {

@@ -115,6 +115,39 @@ export async function createTransferPermit(
   return await signWithSignature(owner, dataToSign);
 }
 
+export async function createSwapPermit(owner: Address, to: Address, path: string, amountIn: String, amountOutMin: string, maxFee: String, domain: IDomain) {
+
+  const permit = { to, amountIn, amountOutMinimum: amountOutMin, path, maxFee }
+
+  const Permit = [
+    { name: "to", type: "address" },
+    { name: "path", type: "bytes" },
+    { name: "amountIn", type: "uint256" },
+    { name: "amountOutMinimum", type: "uint256" },
+    { name: "maxFee", type: "uint256" },
+  ]
+
+  const domainType = [
+      { name: 'name', type: 'string' },
+      { name: 'version', type: 'string' },
+      { name: 'chainId', type: 'uint256' },
+      { name: 'verifyingContract', type: 'address' },
+  ]
+
+  const dataToSign : any = {
+      types: {
+          EIP712Domain: domainType,
+          Permit: Permit
+      },
+      domain: domain,
+      primaryType: "Permit",
+      message: permit
+  }
+
+  return await signWithSignature(owner, dataToSign)
+
+}
+
 const signWithSignature = async (owner: Address, dataToSign: any) => {
   const client = createWalletClient({
     account: owner,
