@@ -1,19 +1,32 @@
-import { viem } from "hardhat";
-import { Address, getContract, parseEther } from "viem";
-import { utils } from 'ethers'
-import { BigNumber } from 'ethers'
-import PancakeV3Factory from "../abi/PancakeV3Factory.json"
+import hre, { viem, ethers } from "hardhat";
+import { Address, createPublicClient, createTestClient, http, parseEther } from "viem";
+import erc20Abi from '../abi/ERC20.json';
+import { hardhat } from 'viem/chains'
+import { Contract } from "ethers";
+
+
+
+
+
+
+export const deployer = "0x5103BC779fdd4799Cfd5efC6ee827F7B1D57789B"
+
+export const userAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+
+export const usdcAddress = "0x53524045cac3154b466f379797cd17a5019f4389"
+export const daiAddress  =  "0x38d3b8c94f573c71d04a3f0f4151c37bc29b61c2"
 
 export const bnbPriceFeeds =  "0x2514895c72f50D8bd4B4F9b1110F0D6bD2c97526"
 export const usdcPriceFeeds = "0x90c069C4538adAc136E051052E14c1cD799C41B7"
 export const daiPriceFeeds =  "0xE4eE17114774713d2De0eC0f035d4F7665fc025D"
 export const swapRouterV3 =   "0x1b81D678ffb9C0263b24A97847620C99d213eB14"
 export const factoryV3 =      "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865"
-export const NFTPMangerV3 =   "0x46A15B0b27311cedF172AB29E4f4766fbE7F4364"
+export const NFTPMangerV3 =   "0x427bF5b37357632377eCbEC9de3626C71A5396c1"
+export const SwapRouterV2 =   "0xD99D1c33F9fC3444f8101754aBC46c52416550D1"
+
 
 export const DECIMAL = parseEther("1", "wei")
 
-export const MaxUint128 = BigNumber.from(2).pow(128).sub(1)
 
 export enum FeeAmount {
   LOW = 500,
@@ -35,6 +48,12 @@ export interface IDomain {
     verifyingContract: Address,
     chainId: number
 }
+
+export const testClient = createTestClient({
+    chain: hardhat,
+    mode: "hardhat",
+    transport: http(), 
+})
 
 export async function createPermit(owner: Address, spender: Address, value: String, nonce: String, deadline: String, domain: IDomain) {
 
@@ -68,8 +87,6 @@ export async function createPermit(owner: Address, spender: Address, value: Stri
     return await signWithSignature(owner, dataToSign)
 
 }
-
-
 
 export async function createTransferPermit(owner: Address, to: Address, value: String, maxFee: String, domain: IDomain) {
 
@@ -106,8 +123,6 @@ const signWithSignature = async (owner: Address, dataToSign: any) => {
 
     const signature =  await (await viem.getWalletClient(owner)).signTypedData(dataToSign)
 
-    console.log(await (await viem.getWalletClient(owner)).account.address, "----")
-
     const pureSig = signature.replace("0x", "")
 
     const r = Buffer.from(pureSig.substring(0, 64), 'hex')
@@ -115,55 +130,120 @@ const signWithSignature = async (owner: Address, dataToSign: any) => {
     const v = Buffer.from((parseInt(pureSig.substring(128, 130), 16)).toString());
 
     return {
-        r: "0x" + r.toString('hex'), 
-        s: "0x" + s.toString('hex'), 
-        v: parseInt(v.toString()), 
+        r: "0x" + r.toString('hex'),
+        s: "0x" + s.toString('hex'),
+        v: parseInt(v.toString()),
         signature
     }
 }
 
-export const setSigner = async (account: Address) => {
+export const getSigner = async (account: Address) => {
     return (await viem.getWalletClient(account))
 }
 
+export const transferTokens = async () => {
 
-export const createPoolPancakeSwap = async (tokenA: Address, tokenB: Address) => {
+    const amount = parseEther("1000", "wei")
 
-    const nFTPMangerV3 = await viem.getContractAt("IPoolInitializer", NFTPMangerV3)
+    const USDC = await ethers.getContractAt("MockERC20WithPermit", usdcAddress);
 
-    const hash = await nFTPMangerV3.write.createAndInitializePoolIfNecessary([tokenA, tokenB, FeeAmount.MEDIUM, 10000000000000n])
+    const DAI  = await viem.getContractAt("MockERC20WithPermit", daiAddress);
 
-    console.log(hash)
+    await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [deployer],
+    });
+
+    // console.log("999",MrWhale.address)
+
+    // await USDC.connect(MrWhale).transfer(userAddress, amount)
+
+    //await USDC.connect(deployer).tr
+
+    // await MrWhale.writeContract({
+    //     account: deployer,
+    //     address: usdcAddress,
+    //     abi: erc20Abi,
+    //     functionName: "transfer",
+    //     args: [userAddress, amount]
+    // })
+
+//    const USDC = ethers.getContractAt("MockERC20WithPermit", usdcAddress)
+
+//    const contractSigner = contract.connect(MrWhale);
+
+
+
+//console.log( await USDC.connect(await ethers.getSigner(deployer)))
+
+    // await USDC.connect(await ethers.getSigner(deployer)).transfer([userAddress, amount])
+
+    //await DAI.write.transfer([userAddress, amount])
+
+
+    //console.log(await USDC.balanceOf([userAddress]))
+
+    console.log(await DAI.read.balanceOf([userAddress]))
+
+    await hre.network.provider.request({
+        method: "hardhat_stopImpersonatingAccount",
+        params: [deployer],
+    });
+
 }
 
-export const addLiquidityPancakeSwap = async (tokenA: Address, tokenB: Address, amountADesired: bigint, amountBDesired: bigint, to: Address) => {
+// export const createPoolPancakeSwap = async (tokenA: Address, tokenB: Address) => {
 
-    const amountAMin = amountADesired / 10n
+//     const nFTPMangerV3 = await viem.getContractAt("IPoolInitializer", NFTPMangerV3)
 
-    const amountBMin = amountBDesired / 10n
+//     //const hash = await nFTPMangerV3.write.createAndInitializePoolIfNecessary([tokenA, tokenB, FeeAmount.MEDIUM, 10000000000000n])
 
-    const deadline = Date.now()
+//     //console.log(hash)
+// }
 
-    const nFTPMangerV3 = await viem.getContractAt("INonfungiblePositionManager", NFTPMangerV3)
+// export const addLiquidityPancakeSwap = async (tokenA: Address, tokenB: Address, amountADesired: bigint, amountBDesired: bigint, to: Address) => {
 
-    const TokenA = await viem.getContractAt("MockERC20WithPermit", tokenA)
+//     const amountAMin = amountADesired / 10n
 
-    const TokenB = await viem.getContractAt("MockERC20WithPermit", tokenB)
+//     const amountBMin = amountBDesired / 10n
 
-    await TokenA.write.approve([swapRouterV3, amountADesired])
+//     const deadline = 1000000000000n
 
-    await TokenB.write.approve([swapRouterV3, amountBDesired])
+//     const swapRouterV2 = await viem.getContractAt("IPancakeRouter02", SwapRouterV2)
 
-    await nFTPMangerV3.write.mint([[
-        tokenA, tokenB, FeeAmount.MEDIUM, 0, 100000,  
-        amountADesired, amountBDesired, amountAMin, amountBMin,
-        to, deadline
-    ]])
+//     const nFTPMangerV3 = await viem.getContractAt("INonfungiblePositionManager", NFTPMangerV3)
+
+//     const TokenA = await viem.getContractAt("MockERC20WithPermit", tokenA)
+
+//     const TokenB = await viem.getContractAt("MockERC20WithPermit", tokenB)
+
+//     await TokenA.write.approve([SwapRouterV2, amountADesired])
+
+//     await TokenB.write.approve([SwapRouterV2, amountBDesired])
+
+//     // const input = [
+//     //     tokenA, tokenB, FeeAmount.MEDIUM, 1, 1000,
+//     //     amountADesired, amountBDesired, amountAMin, amountBMin,
+//     //     to, deadline
+//     // ]
+
+//     console.log("====", await nFTPMangerV3.read.name())
+
+//     console.log(await swapRouterV2.read.factory())
+
+//     //console.log(swapRouterV2.address)
+
+// //    await swapRouterV2.write.addLiquidity([tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin, to, deadline])
 
 
-    
 
-}
+
+//     await swapRouterV2.write.addLiquidityETH([tokenA, amountADesired, amountAMin, amountBMin, to, deadline])
+
+
+
+//    //console.log(await swapRouterV2.read.quote([parseEther("1", "wei"), [tokenA]]))
+// }
 
 const ADDR_SIZE = 20
 const FEE_SIZE = 3
@@ -190,53 +270,17 @@ export function encodePath(path: string[], fees: FeeAmount[]): string {
 
 }
 
-function decodeOne(tokenFeeToken: Buffer): [[string, string], number] {
-    // reads the first 20 bytes for the token address
-    const tokenABuf = tokenFeeToken.slice(0, ADDR_SIZE)
-    const tokenA = utils.getAddress('0x' + tokenABuf.toString('hex'))
-
-    // reads the next 2 bytes for the fee
-    const feeBuf = tokenFeeToken.slice(ADDR_SIZE, OFFSET)
-    const fee = feeBuf.readUIntBE(0, FEE_SIZE)
-
-    // reads the next 20 bytes for the token address
-    const tokenBBuf = tokenFeeToken.slice(OFFSET, DATA_SIZE)
-    const tokenB = utils.getAddress('0x' + tokenBBuf.toString('hex'))
-
-    return [[tokenA, tokenB], fee]
-}
-
-export function decodePath(path: string): [string[], number[]] {
-
-    let data = Buffer.from(path.slice(2), 'hex')
-
-    let tokens: string[] = []
-    let fees: number[] = []
-    let i = 0
-    let finalToken: string = ''
-    while (data.length >= DATA_SIZE) {
-        const [[tokenA, tokenB], fee] = decodeOne(data)
-        finalToken = tokenB
-        tokens = [...tokens, tokenA]
-        fees = [...fees, fee]
-        data = data.slice((i + 1) * OFFSET)
-        i += 1
-    }
-    tokens = [...tokens, finalToken]
-
-    return [tokens, fees]
-}
 
 
 
 export const calculatePrice = async (amount: bigint, baseCurrencyAddress: Address, quoteCurrencyAddress: Address) => {
-    
+
     const baseCurrency =  await viem.getContractAt("MockV3Aggregator", baseCurrencyAddress)
-    
+
     const quoteCurrency =  await viem.getContractAt("MockV3Aggregator", quoteCurrencyAddress)
 
     const basePrice = await baseCurrency.read.latestAnswer()
-    
+
     const quotePrice = await quoteCurrency.read.latestAnswer()
 
     return (amount * ((quotePrice * DECIMAL) / basePrice)) / DECIMAL

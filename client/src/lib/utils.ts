@@ -13,6 +13,21 @@ import { hardhat, bscTestnet } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import { EXECUTOR_PRIVATE_KEY } from "./constants";
 import GaslessPaymasterAbi from "../abi/contracts/GaslessPaymaster.sol/GaslessPaymaster.json";
+
+import { FeeAmount } from "./enums";
+
+
+const ADDR_SIZE = 20
+const FEE_SIZE = 3
+const OFFSET = ADDR_SIZE + FEE_SIZE
+const DATA_SIZE = OFFSET + ADDR_SIZE
+
+export const TICK_SPACINGS: { [amount in FeeAmount]: number } = {
+  [FeeAmount.LOW]: 10,
+  [FeeAmount.MEDIUM]: 50,
+  [FeeAmount.HIGH]: 200,
+}
+
 import MockERC20Abi from "@/abi/contracts/mocks/MockERC20WithPermit.sol/MockERC20WithPermit.json";
 import PaymasterAbi from "@/abi/contracts/GaslessPaymaster.sol/GaslessPaymaster.json";
 
@@ -214,5 +229,28 @@ export const getPaymaster = async (paymasterAddress: Address) => {
     client: client,
   });
 
-  return { GaslessPaymaster, client, account };
-};
+  return {  GaslessPaymaster, client, account }
+}
+
+
+
+export function encodePath(path: string[], fees: FeeAmount[]): string {
+
+  if (path.length != fees.length + 1) {
+      throw new Error('path/fee lengths do not match')
+  }
+
+  let encoded = '0x'
+  for (let i = 0; i < fees.length; i++) {
+      // 20 byte encoding of the address
+      encoded += path[i].slice(2)
+      // 3 byte encoding of the fee
+      encoded += fees[i].toString(16).padStart(2 * FEE_SIZE, '0')
+  }
+  // encode the final token
+  encoded += path[path.length - 1].slice(2)
+
+  return encoded.toLowerCase()
+
+}
+

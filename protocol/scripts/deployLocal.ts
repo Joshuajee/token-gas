@@ -1,31 +1,22 @@
 import { parseEther } from "viem";
-import hre, { viem } from "hardhat";
-import { addLiquidityPancakeSwap, bnbPriceFeeds, createPoolPancakeSwap, daiPriceFeeds, swapRouterV3, usdcPriceFeeds } from "./helper";
+import hre from "hardhat";
+import { bnbPriceFeeds, daiAddress, daiPriceFeeds, swapRouterV3, transferTokens, usdcAddress, usdcPriceFeeds } from "./helper";
 
 const user = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
 const receiver = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
 
 async function main() {
 
-  const publicClient = await viem.getPublicClient()
-
   const value = parseEther("100", "wei")
-
-  const mockUSDC = await hre.viem.deployContract("MockERC20WithPermit", ["USDC", "USDC"])
-
-  const mockDAI = await hre.viem.deployContract("MockERC20WithPermit", ["DAI", "DAI"])
-
-  const daiAddress = mockDAI.address
-  const usdcAddress = mockUSDC.address
 
   const GaslessFactory = await hre.viem.deployContract("GaslessFactory", [
     swapRouterV3,
     bnbPriceFeeds
   ])
 
-  await GaslessFactory.write.createPool([mockUSDC.address, usdcPriceFeeds])
+  await GaslessFactory.write.createPool([usdcAddress, usdcPriceFeeds])
 
-  await GaslessFactory.write.createPool([mockDAI.address, daiPriceFeeds])
+  await GaslessFactory.write.createPool([daiAddress, daiPriceFeeds])
 
   const values = await GaslessFactory.read.getPoolAddresses()
 
@@ -39,20 +30,9 @@ async function main() {
 
   await DAIPaymaster.write.deposit([user], { value: value })
 
-
   console.log(values)
 
-  console.log(await mockUSDC.read.balanceOf(["0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"]))
-
-  console.log(await USDCPaymaster.read.eip712Domain())
-
-  console.log(await mockUSDC.read.eip712Domain())
-
-  const amount = parseEther("10000000", "wei")
-
-  await createPoolPancakeSwap(usdcAddress, daiAddress)
-
-  //await addLiquidityPancakeSwap(usdcAddress, daiAddress, amount, amount, user)
+  await transferTokens()
 
 }
 
