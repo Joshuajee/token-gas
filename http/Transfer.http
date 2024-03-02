@@ -8,7 +8,7 @@ POST http://localhost:3000/api/transfers
     "amount": "1000000000000000000000",
     "fee":    "1000000000000000000",            
     "nonce": "0",
-    "paymasterAddress": "0x61c36a8d610163660E21a8b7359e1Cac0C9133e1",
+    "paymasterAddress": "0x07FaBe0FEF648b719b0E9EF8302Cd3037693F587",
     "deadline": "100000000000000"
 }
 

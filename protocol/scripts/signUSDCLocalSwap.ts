@@ -1,16 +1,16 @@
 import { parseEther } from "viem";
 import hre from "hardhat";
-import { IDomain, createPermit, createTransferPermit, usdcAddress, usdcPaymaster } from "./helper";
+import { FeeAmount, IDomain, createPermit, createSwapPermit, daiAddress, encodePath, usdcAddress, usdcPaymaster } from "./helper";
 
 const user = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
-const receiver = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
 
 const nonce = "0"
-const amount = parseEther("1000", "wei")
+const amountIn = parseEther("1000", "wei")
 const maxFee = parseEther("1", "wei")
-const amountWithFee = (amount + maxFee).toString()
+const amountWithFee = (amountIn + maxFee).toString()
+const amountOutMin = amountIn / 10n
 
-console.log(amount)
+console.log(amountIn)
 console.log(maxFee)
 
 const deadline = BigInt("100000000000000")
@@ -23,6 +23,7 @@ async function main() {
 
   await USDCPaymaster.write.deposit(["0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"])
 
+  const nonce = await USDC.read.nonces(["0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"])
 
   const domain : IDomain = {
     name: await USDC.read.name(),
@@ -44,20 +45,26 @@ async function main() {
     user, 
     usdcPaymaster, 
     amountWithFee,
-    nonce, 
+    nonce.toString(), 
     deadline.toString(), 
     domain
   )
 
-  const tx_signatures = await createTransferPermit(
+  console.log(encodePath([usdcAddress, daiAddress], [FeeAmount.HIGH]))
+
+  const tx_signatures = await createSwapPermit(
     user, 
-    receiver,  
-    amount.toString(),
+    user,  
+    encodePath([usdcAddress, daiAddress], [FeeAmount.HIGH]),
+    amountIn.toString(),
+    amountOutMin.toString(),
     maxFee.toString(),
     domain2
   )
 
   console.log({signatures, tx_signatures})
+
+  console.log("nonce: ", nonce)
 
 }
 

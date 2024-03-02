@@ -1,7 +1,7 @@
 {
-  "name": "adpay",
+  "name": "token-gas",
   "version": "1.0.0",
-  "description": "Pay gas by watching adds",
+  "description": "Pay gas with erc20",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
@@ -11,8 +11,9 @@
     "deploy-tokens": "hardhat run --network bscTestnet scripts/deployTokens.ts",
     "deploy-local": "hardhat run --network localhost scripts/deployLocal.ts",
     "deploy-local-fork": "hardhat run --network hardhat scripts/deployLocal.ts",
-    "sign-local": "hardhat run --network localhost scripts/signUSDCLocal.ts",
-    "coverage": "hardhat coverage"
+    "sign-local-tf": "hardhat run --network localhost scripts/signUSDCLocal.ts",
+    "sign-local-sp": "hardhat run --network localhost scripts/signUSDCLocalSwap.ts",
+    "coverage": "hardhat --network localhost coverage"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
@@ -22,6 +23,12 @@
     "@nomicfoundation/hardhat-viem": "^1.0.0",
     "@nomiclabs/hardhat-ethers": "2.0.2",
     "@nomiclabs/hardhat-etherscan": "^3.1.8",
+    "@chainlink/contracts": "^0.8.0",
+    "@nomicfoundation/hardhat-ethers": "^3.0.5",
+    "@openzeppelin/contracts": "^5.0.1",
+    "@pancakeswap/v3-core": "^1.0.2",
+    "@pancakeswap/v3-periphery": "^1.0.2",
+    "dotenv": "^16.4.5",
     "@typechain/ethers-v5": "^11.1.2",
     "@types/chai": "^4.2.0",
     "@types/chai-as-promised": "^7.1.6",
@@ -32,18 +39,9 @@
     "hardhat-abi-exporter": "^2.10.1",
     "hardhat-contract-sizer": "^2.10.0",
     "hardhat-gas-reporter": "^1.0.8",
-    "solidity-coverage": "^0.8.0",
+    "solidity-coverage": "^0.8.10",
     "ts-node": ">=8.0.0",
     "typescript": "~5.0.4",
     "viem": "^1.15.1"
-  },
-  "dependencies": {
-    "@chainlink/contracts": "^0.8.0",
-    "@nomicfoundation/hardhat-ethers": "^3.0.5",
-    "@openzeppelin/contracts": "^5.0.1",
-    "@pancakeswap/v3-core": "^1.0.2",
-    "@pancakeswap/v3-periphery": "^1.0.2",
-    "dotenv": "^16.4.5",
-    "ethers": "^6.11.1"
   }
 }

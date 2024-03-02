@@ -9,15 +9,27 @@ export interface ITransactions {
   fee: string;
   nonce: string;
   paymasterAddress: Address;
-  minAmountOut?: string; // for swaps
+  amountOutMin?: string; // for swaps
   path?: string; // for swaps
   deadline: string;
 }
 
-export interface ITransactionDetails {
+export interface ITransferDetails {
   sender: Address;
   receiver: Address;
   deadline: string;
   amount: string;
   maxFee: string;
+}
+
+
+export interface ISwapDetails {
+  sender: Address;
+  receiver: Address;
+  deadline: string;
+  amount: string;
+  amountIn: string;
+  amountOutMin: string;
+  maxFee: string;
+  path: string
 }

@@ -22,7 +22,7 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
 
 
     bytes32 private constant SWAP_PERMIT_TYPEHASH =
-        keccak256("Permit(address to,uint256 amount,uint256 maxFee)");
+        keccak256("Permit(bytes path,address recipient,uint256 amountIn,uint256 amountOutMinimum,uint256 maxFee)");
 
     /**
      * @dev Mismatched signature.
