@@ -3,6 +3,7 @@ import { SwapTransaction } from '@/components/Swap/Columns'
 import Nav from '@/components/ui/nav'
 import mydata from "@/lib/swapData.json"
 import { useState } from 'react'
+import { Toaster } from 'sonner';
 
 export default function Liquidity() {
     //@ts-ignore
@@ -18,6 +19,7 @@ export default function Liquidity() {
                 </div>
 
             </div>
+            <Toaster richColors />
         </main>
     )
 }
