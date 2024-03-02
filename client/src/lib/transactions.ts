@@ -45,8 +45,10 @@ export const swapOnPancake = async (paymasterAddress: Address, permitSignature: 
 
   const decodeSwap = decodeSignature(swapSignature)
 
+  console.log(BigInt(amountIn) + BigInt(maxFee))
+
   const permitData = [
-    paymasterAddress,
+    sender,
     BigInt(amountIn) + BigInt(maxFee),
     deadline,
     decodePermit.v,

@@ -4,7 +4,6 @@ import { FeeAmount, IDomain, createPermit, createSwapPermit, daiAddress, encodeP
 
 const user = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
 
-const nonce = "0"
 const amountIn = parseEther("1000", "wei")
 const maxFee = parseEther("1", "wei")
 const amountWithFee = (amountIn + maxFee).toString()
@@ -12,6 +11,8 @@ const amountOutMin = amountIn / 10n
 
 console.log(amountIn)
 console.log(maxFee)
+console.log(amountOutMin)
+console.log(amountWithFee)
 
 const deadline = BigInt("100000000000000")
 
