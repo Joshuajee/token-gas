@@ -161,15 +161,15 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
 
         token.safeTransferFrom(from, address(this), amountIn);
 
-        //token.approve(address(router), amount);
+        token.approve(address(router), amountIn);
 
-        // router.exactInput(ISwapRouter.ExactInputParams({
-        //     path: swapData.path,
-        //     recipient: swapData.recipient,
-        //     deadline: deadline,
-        //     amountIn: swapData.amountIn,
-        //     amountOutMinimum: swapData.amountOutMinimum
-        // }));
+        router.exactInput(ISwapRouter.ExactInputParams({
+            path: swapData.path,
+            recipient: swapData.recipient,
+            deadline: deadline,
+            amountIn: swapData.amountIn,
+            amountOutMinimum: swapData.amountOutMinimum
+        }));
  
         _payFees(caller, from, swapData.maxFee, startingGas);
 

@@ -1,5 +1,6 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox-viem";
+import "@nomicfoundation/hardhat-ethers";
 import "hardhat-abi-exporter";
 import "hardhat-contract-sizer";
 import dotenv from "dotenv";
@@ -54,7 +55,7 @@ const config: HardhatUserConfig = {
       forking: {
         enabled: true,
         url: BSC_RPC,
-        blockNumber: 38143938,
+        blockNumber: 38205282,
       },
     },
     bscTestnet: {

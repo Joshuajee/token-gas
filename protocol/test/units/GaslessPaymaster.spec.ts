@@ -2,7 +2,7 @@ import {loadFixture} from "@nomicfoundation/hardhat-toolbox-viem/network-helpers
 import { expect } from "chai";
 import hre, { viem } from "hardhat";
 import { checksumAddress, parseEther } from "viem";
-import { FeeAmount, IDomain, bnbPriceFeeds, createPermit, createTransferPermit, encodePath, maxFee, swapRouterV3, usdcPriceFeeds} from "../../scripts/helper";
+import { FeeAmount, IDomain, bnbPriceFeeds, createPermit, createTransferPermit, encodePath, maxFee, swapRouterV3, usdcAddress, usdcPriceFeeds} from "../../scripts/helper";
 import { calculatePrice } from "../../scripts/helper";
 
 
@@ -16,7 +16,7 @@ describe("GaslessPaymaster ", function () {
 
         const [user1, user2, user3, user4] = await hre.viem.getWalletClients();
 
-        const mockERC20WithPermit = await hre.viem.deployContract("MockERC20WithPermit", ["mockUSDC", "mockUSDC"])
+        const mockERC20WithPermit = await hre.viem.getContractAt("MockERC20WithPermit", usdcAddress)
 
         const GaslessPaymaster = await hre.viem.deployContract("GaslessPaymaster", [
             mockERC20WithPermit.address, swapRouterV3,
