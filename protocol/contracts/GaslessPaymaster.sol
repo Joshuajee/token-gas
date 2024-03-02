@@ -22,7 +22,7 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
 
 
     bytes32 private constant SWAP_PERMIT_TYPEHASH =
-        keccak256("Permit(bytes path,address recipient,uint256 amountIn,uint256 amountOutMinimum,uint256 maxFee)");
+        keccak256("Permit(bytes path,address to,uint256 amountIn,uint256 amountOutMinimum,uint256 maxFee)");
 
     /**
      * @dev Mismatched signature.
@@ -143,6 +143,8 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
 
         uint amountIn = swapData.amountIn;
 
+        uint maxFee = swapData.maxFee;
+
         uint deadline = permitData.deadline;
 
         address from = permitData.owner;
@@ -159,6 +161,10 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
             permitData.s
         );
 
+        bytes32 structHash = keccak256(abi.encode(SWAP_PERMIT_TYPEHASH, swapData.path, swapData.recipient, amountIn, swapData.amountOutMinimum, maxFee));
+
+        //_verifySignature(from, structHash, swapData.v, swapData.r, swapData.s);
+
         token.safeTransferFrom(from, address(this), amountIn);
 
         token.approve(address(router), amountIn);
@@ -167,11 +173,11 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
             path: swapData.path,
             recipient: swapData.recipient,
             deadline: deadline,
-            amountIn: swapData.amountIn,
+            amountIn: amountIn,
             amountOutMinimum: swapData.amountOutMinimum
         }));
  
-        _payFees(caller, from, swapData.maxFee, startingGas);
+       _payFees(caller, from, maxFee, startingGas);
 
     }
 

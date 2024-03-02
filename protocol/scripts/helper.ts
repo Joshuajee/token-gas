@@ -122,11 +122,11 @@ export async function createTransferPermit(owner: Address, to: Address, value: S
 
 export async function createSwapPermit(owner: Address, to: Address, path: string, amountIn: String, amountOutMin: string, maxFee: String, domain: IDomain) {
 
-    const permit = { to, amountIn, amountOutMinimum: amountOutMin, path, maxFee }
+    const permit = { path, to, amountIn, amountOutMinimum: amountOutMin, maxFee }
 
     const Permit = [
-      { name: "to", type: "address" },
       { name: "path", type: "bytes" },
+      { name: "to", type: "address" },
       { name: "amountIn", type: "uint256" },
       { name: "amountOutMinimum", type: "uint256" },
       { name: "maxFee", type: "uint256" },
@@ -148,6 +148,8 @@ export async function createSwapPermit(owner: Address, to: Address, path: string
         primaryType: "Permit",
         message: permit
     }
+
+    console.log(dataToSign)
 
     return await signWithSignature(owner, dataToSign)
 
@@ -177,13 +179,11 @@ export const getSigner = async (account: Address) => {
 
 export const transferTokens = async () => {
 
-    const publicClient = await viem.getPublicClient()
+    const amount = parseEther("5000000", "wei")
 
-    const amount = parseEther("1000", "wei")
+    // const USDC = await viem.getContractAt("MockERC20WithPermit", usdcAddress);
 
-    const USDC = await viem.getContractAt("MockERC20WithPermit", usdcAddress);
-
-    const DAI  = await viem.getContractAt("MockERC20WithPermit", daiAddress);
+    // const DAI  = await viem.getContractAt("MockERC20WithPermit", daiAddress);
 
     await testClient.impersonateAccount({ 
         address: deployer
