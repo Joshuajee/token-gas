@@ -6,15 +6,7 @@ async function main() {
 
   const value = parseEther("0.1", "wei")
 
-  const GaslessFactory = await hre.viem.deployContract("GaslessFactory", [
-    swapRouterV3,
-    bnbPriceFeeds
-  ])
-
-  await GaslessFactory.write.createPool([daiAddress, daiPriceFeeds])
-
-  await GaslessFactory.write.createPool([usdcAddress, usdcPriceFeeds])
-
+  const GaslessFactory = await hre.viem.getContractAt("GaslessFactory", "0xdc0c61e97ffcd248dd9b4ebab4dbb5c8d0b62da0")
 
   const values = await GaslessFactory.read.getPoolAddresses()
 
