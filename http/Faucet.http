@@ -1,0 +1,8 @@
+POST http://localhost:3000/api/faucet
+
+{
+    "token": "0x53524045cAC3154B466F379797CD17a5019f4389",
+    "to": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+}
+
+

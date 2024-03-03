@@ -182,10 +182,6 @@ export const transferTokens = async () => {
 
     const amount = parseEther("5000000", "wei")
 
-    // const USDC = await viem.getContractAt("MockERC20WithPermit", usdcAddress);
-
-    // const DAI  = await viem.getContractAt("MockERC20WithPermit", daiAddress);
-
     await testClient.impersonateAccount({ 
         address: deployer
     })

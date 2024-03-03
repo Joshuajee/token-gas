@@ -27,7 +27,6 @@ export interface ISwapDetails {
   sender: Address;
   receiver: Address;
   deadline: string;
-  amount: string;
   amountIn: string;
   amountOutMin: string;
   maxFee: string;
