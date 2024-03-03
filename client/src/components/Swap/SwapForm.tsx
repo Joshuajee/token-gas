@@ -321,6 +321,7 @@ export default function SwapForm() {
                                                 </FormControl>
                                                 <SelectContent>
                                                     <SelectItem value="dai">DAI</SelectItem>
+                                                    <SelectItem value="busd">BUSD</SelectItem>
                                                     <SelectItem value="usdc">USDC</SelectItem>
 
                                                 </SelectContent>
