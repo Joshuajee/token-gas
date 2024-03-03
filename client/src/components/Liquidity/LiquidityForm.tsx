@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod";
@@ -38,10 +38,26 @@ import paymasterAbi from "@abi/contracts/GaslessPaymaster.sol/GaslessPaymaster.j
 import { useAccount, useWriteContract } from 'wagmi'
 import { useReadContract } from 'wagmi'
 import { toast } from 'sonner';
+import { format } from 'path';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { getTokenShare } from '@/lib/utils';
 
 export default function LiquidityForm() {
     const { address } = useAccount()
+    const [share, setShares] = useState<BigInt[]>([0n, 0n])
+    const [redeemable, setRedeemable] = useState<boolean>(false)
+
     const { writeContract, isSuccess: depositSuccess, isError: depositError } = useWriteContract()
+    const { writeContract: writeContractRedeem, isSuccess: redeemSuccess, isError: redeemError } = useWriteContract()
 
     //define form
     const form = useForm<z.infer<typeof liquiditySchema>>({
@@ -68,8 +84,6 @@ export default function LiquidityForm() {
     })
 
 
-
-
     const handleDepsits = async () => {
 
         const values = form.getValues()
@@ -87,7 +101,7 @@ export default function LiquidityForm() {
                     value: weiValue,
 
                 })
-                toast.success("Deposit complete")
+
             } catch (error) {
                 console.log("🚀 ~ onDeposit ~ error:", error)
                 toast.error("An error occurred during transaction")
@@ -97,27 +111,55 @@ export default function LiquidityForm() {
 
     }
     const handleWithdrawals = async () => {
+
         const values = form.getValues()
         if (Number(values.amount) > 0 && values.pool.length > 0) {
             const selectedPaymaster = (paymaster as any)[values.pool]
             console.log("🚀 ~ handleWithdrawals ~ selectedPaymaster:", selectedPaymaster)
             const weiValue = parseEther(values.amount, "wei")
+            console.log(weiValue)
             try {
-                const tx = await writeContract({
+                const tx = await writeContractRedeem({
                     address: selectedPaymaster,
                     abi: paymasterAbi,
-                    functionName: 'withdraw',
+                    functionName: 'redeem',
                     args: [weiValue, address, address],
 
                 })
-                toast.success("Withdrawal complete")
+
             } catch (error) {
-                console.log("🚀 ~ onDeposit ~ error:", error)
+
                 toast.error("An error occurred during transaction")
             }
         }
 
     }
+
+    const getShare = async () => {
+        const amt = Number(form.getValues().amount)
+        const selectedPaymaster = (paymaster as any)[form.getValues().pool]
+        if (amt > 0 && selectedPaymaster) {
+
+            const weiValue = parseEther(amt.toString(), "wei")
+            const share: BigInt[] = await getTokenShare(selectedPaymaster, weiValue) as BigInt[]
+            console.log("🚀 ~ getShare ~ share:", share)
+            setShares(share)
+
+        }
+    }
+
+
+    const handleButton = (data: any) => {
+
+        if (data.amount > 0) {
+            setRedeemable(true)
+        }
+        else {
+            setRedeemable(false)
+        }
+    }
+
+    form.watch(handleButton)
 
     useEffect(() => {
 
@@ -130,16 +172,35 @@ export default function LiquidityForm() {
     useEffect(() => {
 
         if (depositSuccess) {
-            console.log("🚀 ~ useEffect ~ depositSuccess:", depositSuccess)
+            toast.success("Deposit complete")
             form.reset()
         } else if (depositError) {
-            console.log("🚀 ~ useEffect ~ depositError:", depositError)
+            toast.error("An error occurred during transaction")
         }
 
         //* Refetch balances from current token
         refetchLpData()
         refetchTotalAsset()
     }, [depositSuccess, depositError])
+
+
+
+    useEffect(() => {
+
+        if (redeemSuccess) {
+            toast.success("Withdrawal complete")
+            form.reset()
+        } else if (redeemError) {
+            toast.error("An error occurred during transaction")
+        }
+
+        //* Refetch balances from current token
+        refetchLpData()
+        refetchTotalAsset()
+    }, [redeemSuccess, redeemError])
+
+
+
     return (
         <Card className="w-full max-w-[400px] shadow-md">
             <CardHeader>
@@ -152,26 +213,26 @@ export default function LiquidityForm() {
                 <CardDescription className='text-center'>Contribute to liquidity pool</CardDescription>
             </CardHeader>
             <CardContent>
-                <div className='h-10 grid grid-cols-3 mb-4'>
+                <div className='h-10 grid grid-cols-2 mb-4'>
                     <div className='border-r'>
                         <div className='h-[50%] flex justify-center items-center text-xs font-semibold text-muted-foreground'>
-                            Total
+                            Total (BNB)
                         </div>
                         <div className='h-[50%] flex justify-center items-center text-md font-semibold'>
-                            {typeof totalAsset == "bigint" && formatEther(totalAsset)}
+                            {typeof totalAsset == "bigint" && Number(formatEther(totalAsset)).toFixed(4)}
                         </div>
                     </div>
-                    <div className='border-r'>
+                    {/* <div className='border-r'>
                         <div className='h-[50%] flex justify-center items-center text-xs font-semibold text-muted-foreground'>
                             Share
                         </div>
                         <div className='h-[50%] flex justify-center items-center text-md font-semibold'>
                             1.1023
                         </div>
-                    </div>
+                    </div> */}
                     <div className=''>
                         <div className='h-[50%] flex justify-center items-center text-xs font-semibold text-muted-foreground'>
-                            Balance
+                            LGP-{form.getValues().pool.toUpperCase()}
                         </div>
                         <div className='h-[50%] flex justify-center items-center text-md font-semibold'>
                             {typeof lpData == "bigint" && Number(formatEther(lpData)).toFixed(4)}
@@ -228,7 +289,39 @@ export default function LiquidityForm() {
                             </div>
 
                             <div className='flex w-full gap-3 justify-end'>
-                                <Button variant={'secondary'} onClick={handleWithdrawals} type="submit" className='w-1/2'>Withdraw</Button>
+                                {!redeemable && <Button variant={'secondary'} disabled={redeemable} type="button" className='w-1/2'>Redeem</Button>}
+                                {redeemable && <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Button variant={'secondary'} type="button" onClick={getShare} className='w-1/2'>Redeem</Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-md">
+                                        <DialogHeader>
+                                            <DialogTitle>Tokens to receive</DialogTitle>
+                                            <DialogDescription className='w-full'>
+                                                <div className=' w-full py-4 flex flex-col gap-3'>
+                                                    <div className='flex justify-between '>
+                                                        <p>BNB</p><p className='font-semibold '>{typeof share[0] == "bigint" && Number(formatEther(share[0])).toFixed(4)}</p>
+                                                    </div>
+
+                                                    <div className='flex justify-between'>
+                                                        <p>USD</p><p className='font-semibold '>{typeof share[1] == "bigint" && Number(formatEther(share[1])).toFixed(4)}</p>
+                                                    </div>
+
+                                                </div>
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="flex items-center  justify-between ">
+                                            <p> Click Ok to proceed.</p>
+                                            <DialogClose className=''>
+                                                <Button onClick={handleWithdrawals} type="submit" size="lg" className="">
+                                                    OK
+
+                                                </Button>
+                                            </DialogClose>
+                                        </div>
+
+                                    </DialogContent>
+                                </Dialog>}
                                 <Button onClick={handleDepsits} type="submit" className='w-1/2'>Deposit</Button>
                             </div>
                         </form>

@@ -7,6 +7,7 @@ import myData from "@/lib/swapData.json"
 import Link from 'next/link'
 import React, { useState } from 'react'
 import { TbArrowBigDownLinesFilled } from "react-icons/tb";
+import { Toaster } from 'sonner'
 
 export default function Swap() {
     //! fix this before deployment .
@@ -28,6 +29,7 @@ export default function Swap() {
                     {data && <SwapTransactionRecord columns={columns} data={data} />}
                 </div>
             </div>
+            <Toaster richColors />
         </main>
     )
 }

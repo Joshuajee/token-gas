@@ -261,6 +261,22 @@ export const getSwapMaxFee = async (contract: Address) => {
 
   return maxFee;
 };
+export const getTokenShare = async (contract: Address, amount: bigint) => {
+  const publicClient = createPublicClient({
+    chain: hardhat,
+    transport: http(),
+  });
+
+  const maxFee = await publicClient.readContract({
+    address: contract,
+    abi: PaymasterAbi,
+    functionName: "getFundShare",
+    args: [amount],
+  });
+
+  return maxFee;
+};
+
 export const getSwapQuote = async (
   contract: Address,
   path: string,

@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react'
+"use client"
+import React, { useEffect, useState } from 'react'
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -37,14 +38,16 @@ import { format } from 'path';
 import { paymaster } from '@/lib/paymasters';
 import { useAccount } from 'wagmi';
 import { IDomain, createPermit, createSwapPermit, encodePath, getMaxFee, getPaymasterDomain, getSwapMaxFee, getSwapQuote, getTokenDomain, getTokenNonce } from '@/lib/utils';
-import { Address, parseEther } from 'viem';
+import { Address, formatEther, parseEther } from 'viem';
 import { FeeAmount } from '@/lib/enums';
 import { ITransactions } from '@/lib/interfaces';
 import { toast } from 'sonner';
+import { RiBearSmileFill } from 'react-icons/ri';
 
 
 export default function SwapForm() {
     const { address } = useAccount()
+    const [fee, setFee] = useState<bigint | null>(null)
 
     //define form
     const form = useForm<z.infer<typeof uniswapSchema>>({
@@ -58,16 +61,27 @@ export default function SwapForm() {
     })
 
     const getQuote = async (data: any) => {
+
         const { tokenToPay, tokenToReceive, amtToPay, amtToReceive } = data
-        if (Number(amtToPay) > 0 && tokenToPay && tokenToReceive && tokenToPay != tokenToReceive) {
-            const path = encodePath([tokenToPay, tokenToReceive], [FeeAmount.HIGH])
-            console.log("🚀 ~ getQuote ~ path:", path)
-            const quoterAddress: Address = process.env.NEXT_PUBLIC_QUOTER_ADDRESS as Address
-            //* convert to wei
-            const amountIn = parseEther(amtToPay, "wei")
-            const quote = await getSwapQuote(quoterAddress, path, amountIn)
-            console.log("🚀 ~ getQuote ~ quote:", quote)
+        const depositPaymaster = (paymaster as any)[data.tokenToPay]
+        if (depositPaymaster) {
+
+            //* get max fee
+            const maxFee = address && await getSwapMaxFee(depositPaymaster)
+            maxFee && setFee(maxFee as any)
         }
+
+
+
+        // if (Number(amtToPay) > 0 && tokenToPay && tokenToReceive && tokenToPay != tokenToReceive) {
+        //     const path = encodePath([tokenToPay, tokenToReceive], [FeeAmount.HIGH])
+        //     console.log("🚀 ~ getQuote ~ path:", path)
+        //     const quoterAddress: Address = process.env.NEXT_PUBLIC_QUOTER_ADDRESS as Address
+        //     //* convert to wei
+        //     const amountIn = parseEther(amtToPay, "wei")
+        //     const quote = await getSwapQuote(quoterAddress, path, amountIn)
+        //     console.log("🚀 ~ getQuote ~ quote:", quote)
+        // }
 
     }
 
@@ -101,7 +115,7 @@ export default function SwapForm() {
             const data = await response.json();
 
             form.reset()
-            toast.success("Swap complete.")
+            toast.info("token swap in progress.")
 
         } catch (error) {
             console.error(error);
@@ -200,16 +214,16 @@ export default function SwapForm() {
     }
 
 
-    //form.watch(getQuote);
+    form.watch(getQuote);
 
     return (
         <Card className="w-full max-w-[400px] shadow-md">
             <CardHeader>
                 <CardTitle className='text-center flex items-center justify-center gap-x-3'>
                     <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-black">
-                        <GiUnicorn size={30} />
+                        <RiBearSmileFill size={30} />
                     </div>
-                    Uniswap
+                    Pancake swap
                 </CardTitle>
                 <CardDescription className='text-center'>Swap any Token today</CardDescription>
             </CardHeader>
@@ -284,6 +298,8 @@ export default function SwapForm() {
                                             </FormControl>
 
                                             <FormMessage />
+                                            <FormDescription>{Number(fee) > 0 && <p>Estimated Fee: {typeof fee == "bigint" && Number(formatEther(fee)).toFixed(4)} {form.getValues().tokenToPay.toUpperCase()}</p>}</FormDescription>
+
                                         </FormItem>
                                     )}
                                 />
