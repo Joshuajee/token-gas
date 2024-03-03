@@ -20,9 +20,8 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
     bytes32 private constant TRANSFER_PERMIT_TYPEHASH =
         keccak256("Permit(address to,uint256 amount,uint256 maxFee)");
 
-
     bytes32 private constant SWAP_PERMIT_TYPEHASH =
-        keccak256("Permit(bytes path,address recipient,uint256 amountIn,uint256 amountOutMinimum,uint256 maxFee)");
+        keccak256("Permit(bytes32 pathHash,address to,uint256 amountIn,uint256 amountOutMinimum,uint256 maxFee)");
 
     /**
      * @dev Mismatched signature.
@@ -88,7 +87,7 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
     uint public callerFeeAmountInEther = 1 gwei; 
     uint public poolFeeAmountInToken = 1000 gwei; 
 
-    uint constant public DECIMAL = 1 ether;
+    uint constant public DECIMAL = 10 ** 18;
 
 
     constructor(IERC20 _token, ISwapRouter _router, address _bnbPriceFeeds, address _tokenPriceFeeds) Ownable(msg.sender) TokenVault(_token) EIP712(string.concat("LGP-", ERC20(address(_token)).name()), "1") {
@@ -143,6 +142,8 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
 
         uint amountIn = swapData.amountIn;
 
+        uint maxFee = swapData.maxFee;
+
         uint deadline = permitData.deadline;
 
         address from = permitData.owner;
@@ -159,6 +160,11 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
             permitData.s
         );
 
+        bytes32 pathHash = keccak256(swapData.path);
+        bytes32 structHash = keccak256(abi.encode(SWAP_PERMIT_TYPEHASH, pathHash, swapData.recipient, amountIn, swapData.amountOutMinimum, maxFee));
+
+        _verifySignature(from, structHash, swapData.v, swapData.r, swapData.s);
+
         token.safeTransferFrom(from, address(this), amountIn);
 
         token.approve(address(router), amountIn);
@@ -167,11 +173,11 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
             path: swapData.path,
             recipient: swapData.recipient,
             deadline: deadline,
-            amountIn: swapData.amountIn,
+            amountIn: amountIn,
             amountOutMinimum: swapData.amountOutMinimum
         }));
  
-        _payFees(caller, from, swapData.maxFee, startingGas);
+       _payFees(caller, from, maxFee, startingGas);
 
     }
 
@@ -183,8 +189,6 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
         (, int256 bnbPrice,,,) = bnbPriceFeeds.latestRoundData();
         (, int256 tokenPrice,,,) = tokenPriceFeeds.latestRoundData();
         // multiply with decimal to prevent precision loss
-        // return uint((tokenPrice * int(DECIMAL)) / bnbPrice);
-
         return uint((bnbPrice * int(DECIMAL)) / tokenPrice);
     }
 
@@ -225,7 +229,31 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
     }
 
 
-    function getFundShare(uint assets) view public returns (uint amountInTokens, uint amountInBnb) {
+    function getFundShare(uint shares) view public returns (uint amountInTokens, uint amountInBnb) {
+
+        uint assets = convertToAssets(shares);
+
+        // withdraw tokens first before bnb
+        uint tokenBalance = token.balanceOf(address(this));
+
+        uint tokenBalanceInBnb = (tokenBalance * getBnbQuote()) / DECIMAL;
+
+        if (tokenBalanceInBnb > 0) {
+            if (tokenBalanceInBnb >= assets) {
+                amountInTokens = (assets * getTokenQuote()) / DECIMAL;
+            } else {
+                amountInTokens = (tokenBalanceInBnb * getTokenQuote()) / DECIMAL;
+                amountInBnb = assets - tokenBalanceInBnb;
+            }
+        } else {
+            amountInBnb = assets;
+        }
+    
+    }
+
+
+
+    function getFundShareByAssets(uint assets) view public returns (uint amountInTokens, uint amountInBnb) {
 
         // withdraw tokens first before bnb
         uint tokenBalance = token.balanceOf(address(this));
@@ -250,21 +278,13 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
 
         uint gasPrice = tx.gasprice;
 
-        console.log("Gas Price", tx.gasprice);
-
         uint transactionCost = gasPrice * (GAS_USED_OFFSET + startingGas - gasleft());
-
-        console.log("Tx Cost", transactionCost);
 
         uint poolFee = poolFeeAmountInToken;
 
         uint callerFee = callerFeeAmountInEther;
 
         uint gasCostInToken = ((transactionCost + callerFee) * getTokenQuote()) / DECIMAL + poolFee;
-
-        console.log("Gas Cost In Token", gasCostInToken);
-        console.log("Max Fee  In Token", maxFee);
-
 
         uint refund = transactionCost + callerFee;
 
@@ -324,7 +344,7 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
 
         _burn(owner, shares);
 
-        (uint amountInTokens, uint amountInBnb) = getFundShare(assets);
+        (uint amountInTokens, uint amountInBnb) = getFundShareByAssets(assets);
 
         if (amountInTokens > 0) {
             token.safeTransfer(receiver, amountInTokens);

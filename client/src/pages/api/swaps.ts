@@ -5,7 +5,7 @@ import {
   ITransactions,
 } from "@/lib/interfaces";
 import prisma from "@/lib/prisma";
-import { swapOnPancake, transfer } from "@/lib/transactions";
+import { swapOnPancake } from "@/lib/transactions";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 type Data = {

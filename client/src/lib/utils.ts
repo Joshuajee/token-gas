@@ -7,6 +7,7 @@ import {
   custom,
   getContract,
   http,
+  keccak256,
   parseEther,
 } from "viem";
 import { hardhat, bscTestnet } from "viem/chains";
@@ -123,11 +124,19 @@ export async function createSwapPermit(
   maxFee: String,
   domain: IDomain
 ) {
-  const permit = { to, amountIn, amountOutMinimum: amountOutMin, path, maxFee };
+  const pathHash = keccak256(path as Address);
+
+  const permit = {
+    pathHash,
+    to,
+    amountIn,
+    amountOutMinimum: amountOutMin,
+    maxFee,
+  };
 
   const Permit = [
+    { name: "pathHash", type: "bytes32" },
     { name: "to", type: "address" },
-    { name: "path", type: "bytes" },
     { name: "amountIn", type: "uint256" },
     { name: "amountOutMinimum", type: "uint256" },
     { name: "maxFee", type: "uint256" },
