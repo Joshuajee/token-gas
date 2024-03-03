@@ -25,7 +25,7 @@ export default function Nav() {
 
 
             </div>
-            <div className='flex justify-end items-end gap-3'>
+            <div className='flex justify-end items-end gap-3' id='nav'>
                 <NavigationMenu>
                     <NavigationMenuList>
 

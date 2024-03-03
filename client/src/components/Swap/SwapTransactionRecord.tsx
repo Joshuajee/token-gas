@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/table"
 import { Button } from "../ui/button"
 import { useState } from "react"
+import Link from "next/link"
+import { TbArrowBigDownLinesFilled, TbArrowBigUpLinesFilled } from "react-icons/tb"
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
@@ -62,6 +64,9 @@ export function SwapTransactionRecord<TData, TValue>({
                     }
                     className="max-w-sm"
                 />
+                <Link href="#head" className='mr-10'>
+                    <TbArrowBigUpLinesFilled size={30} />
+                </Link>
             </div>
             <div className="rounded-md border h-[80%] overflow-auto">
                 <Table>
