@@ -14,6 +14,20 @@ export interface ITransactions {
   deadline: string;
 }
 
+export interface ISwapTransactions {
+  sender: Address;
+  to: Address;
+  permitSignature: string;
+  transactionSignature: string;
+  amount: string;
+  fee: string;
+  nonce: string;
+  paymasterAddress: Address;
+  amountOutMin: string; // for swaps
+  path: string; // for swaps
+  deadline: string;
+}
+
 export interface ITransferDetails {
   sender: Address;
   receiver: Address;
@@ -21,7 +35,6 @@ export interface ITransferDetails {
   amount: string;
   maxFee: string;
 }
-
 
 export interface ISwapDetails {
   sender: Address;
@@ -31,5 +44,5 @@ export interface ISwapDetails {
   amountIn: string;
   amountOutMin: string;
   maxFee: string;
-  path: string
+  path: string;
 }
