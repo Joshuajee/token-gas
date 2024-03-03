@@ -278,6 +278,11 @@
   },
   {
     "inputs": [],
+    "name": "ErrorNoWithdrawalAllowed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "FailedInnerCall",
     "type": "error"
   },
@@ -876,11 +881,35 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "assets",
+        "name": "shares",
         "type": "uint256"
       }
     ],
     "name": "getFundShare",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "amountInTokens",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountInBnb",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      }
+    ],
+    "name": "getFundShareByAssets",
     "outputs": [
       {
         "internalType": "uint256",

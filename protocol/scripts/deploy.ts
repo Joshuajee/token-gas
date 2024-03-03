@@ -1,27 +1,31 @@
-import { formatEther, parseEther, zeroAddress } from "viem";
+import { parseEther } from "viem";
 import hre from "hardhat";
-import { deployPriceAggregator } from "./mockHelper";
+import { bnbPriceFeeds, daiAddress, daiPriceFeeds, swapRouterV3, usdcAddress, usdcPriceFeeds } from "./helper";
 
 async function main() {
 
-  const { bnbPriceFeeds, usdcPriceFeeds, daiPriceFeeds } = await deployPriceAggregator()
-
-  const mockUSDC = await hre.viem.deployContract("MockERC20WithPermit", ["USDC", "USDC"])
-
-  const mockDAI = await hre.viem.deployContract("MockERC20WithPermit", ["DAI", "DAI"])
+  const value = parseEther("0.1", "wei")
 
   const GaslessFactory = await hre.viem.deployContract("GaslessFactory", [
-    zeroAddress,
-    bnbPriceFeeds.address
+    swapRouterV3,
+    bnbPriceFeeds
   ])
 
-  await GaslessFactory.write.createPool([mockUSDC.address, usdcPriceFeeds.address])
+  await GaslessFactory.write.createPool([usdcAddress, usdcPriceFeeds])
 
-  await GaslessFactory.write.createPool([mockDAI.address, daiPriceFeeds.address])
+  await GaslessFactory.write.createPool([daiAddress, daiPriceFeeds])
 
   const values = await GaslessFactory.read.getPoolAddresses()
 
   console.log("Gasless Factory: ", GaslessFactory.address)
+
+  const USDCPaymaster = await hre.viem.getContractAt("GaslessPaymaster", values[0].payMaster)
+
+  await USDCPaymaster.write.deposit([user], { value: value })
+
+  const DAIPaymaster = await hre.viem.getContractAt("GaslessPaymaster", values[1].payMaster)
+
+  await DAIPaymaster.write.deposit([user], { value: value })
 
   console.log(values)
   

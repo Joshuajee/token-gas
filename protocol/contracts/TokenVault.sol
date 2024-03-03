@@ -12,9 +12,10 @@ import "hardhat/console.sol";
 
 abstract contract TokenVault is ERC4626 {
 
+    error ErrorNoWithdrawalAllowed();
+
     using Math for uint256;
 
-   
     constructor(IERC20 _token) 
         ERC4626(_token)
         ERC20(string.concat("LGP-", ERC20(address(_token)).name()), string.concat("LGP-", ERC20(address(_token)).symbol()))  {
@@ -61,6 +62,12 @@ abstract contract TokenVault is ERC4626 {
      */
     function _convertToAssets(uint256 shares, Math.Rounding rounding) internal view override returns (uint256) {
         return shares.mulDiv(totalAssets(), totalSupply() + 1, rounding);
+    }
+
+    /** @dev See {IERC4626-withdraw}. override */
+    function withdraw(uint256 assets, address receiver, address owner) public override returns (uint256) {
+        revert ErrorNoWithdrawalAllowed();
+        return 0;
     }
 
 

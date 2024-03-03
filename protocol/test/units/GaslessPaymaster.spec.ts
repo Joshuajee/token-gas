@@ -1,7 +1,7 @@
 import {loadFixture} from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { expect } from "chai";
 import hre, { viem } from "hardhat";
-import { checksumAddress, parseEther } from "viem";
+import { checksumAddress, parseEther, zeroAddress } from "viem";
 import { FeeAmount, IDomain, bnbPriceFeeds, createPermit, createSwapPermit, createTransferPermit, daiAddress, encodePath, maxFee, swapRouterV3, transferTokens, usdcAddress, usdcPriceFeeds} from "../../scripts/helper";
 import { calculatePrice } from "../../scripts/helper";
 
@@ -190,9 +190,11 @@ describe("GaslessPaymaster ", function () {
             encodePath([usdcAddress, daiAddress], [FeeAmount.HIGH]),
             amountIn.toString(),
             amountOutMin.toString(),
-            (maxFee).toString(),
+            maxFee.toString(),
             domainPermit2
         )
+
+        console.log({domainPermit2})
         
 
         // Recipient Balance should be equal to zero before Transfer
@@ -260,7 +262,7 @@ describe("GaslessPaymaster ", function () {
 
         it("Should Add Liquidity and Mint LP tokens to receiver", async ( ) => {
 
-            const { GaslessPaymaster, user1, user2  } = await loadFixture(deploy)
+            const { GaslessPaymaster, user1, user2, publicClient  } = await loadFixture(deploy)
 
             const value = parseEther("1", "wei") as any
 
@@ -397,14 +399,16 @@ describe("GaslessPaymaster ", function () {
     })
 
 
-    describe("Withdrawals",  function () {
+    describe("Redeeming Tokens",  function () {
 
-        it("Should be able to correctly estimate Withdrawals", async () => {
+        it("Should be able to correctly estimate Redeem", async () => {
 
             const deployed = await loadFixture(deployAndSupplyLiquidity)
 
-            expect(await deployed.GaslessPaymaster.read.getFundShare([deployed.value])).to.deep.equal([
-                0n, deployed.value
+            const balLpToken = await deployed.GaslessPaymaster.read.balanceOf([deployed.user1.account.address])
+
+            expect(await deployed.GaslessPaymaster.read.getFundShare([balLpToken])).to.deep.equal([
+                0n, balLpToken
             ])
 
             await transfer(deployed)
@@ -433,23 +437,11 @@ describe("GaslessPaymaster ", function () {
 
             const amount = (initialLPBal + 1n) / 2n;
 
-            console.log("------------------------------------------------")
-
-            console.log(await deployed.GaslessPaymaster.read.totalAssets())
-
-            console.log(await deployed.GaslessPaymaster.read.totalSupply())
-
-            await deployed.GaslessPaymaster.write.withdraw([
+            await deployed.GaslessPaymaster.write.redeem([
                 amount, 
                 deployed.user1.account.address, 
                 deployed.user1.account.address
             ])
-
-            console.log("------------------------------------------------")
-
-            console.log(await deployed.GaslessPaymaster.read.totalAssets())
-
-            console.log(await deployed.GaslessPaymaster.read.totalSupply())
 
             expect(await deployed.GaslessPaymaster.read.balanceOf([deployed.user1.account.address])).to.be.equal(initialLPBal - amount)
     
@@ -457,30 +449,75 @@ describe("GaslessPaymaster ", function () {
         
         })
 
+        it("Should only withdraw usdc", async ( ) => {
 
+            const deployed = await loadFixture(deployAndSupplyLiquidity)
 
+            const user = deployed.user1.account.address
 
-        // it("Should be able to withdraw BNB", async ( ) => {
+            const balLpToken = await deployed.GaslessPaymaster.read.balanceOf([user])
 
-        //     const deployed = await loadFixture(deployAndSupplyLiquidity)
+            await transfer(deployed)
+            await transfer(deployed)
+            await transfer(deployed)
+            await transfer(deployed)
+            await transfer(deployed)
+            await transfer(deployed)
+            await transfer(deployed)
 
-        //     await deployed.GaslessPaymaster.write.withdraw([deployed.value, deployed.user2.account.address])
+            const userUSDBal = (await deployed.USDC.read.balanceOf([deployed.user1.account.address]))
 
-        //     await transfer(deployed)
+            const contractUSDBal = (await deployed.USDC.read.balanceOf([deployed.GaslessPaymaster.address]))
 
-        //     const contractUSDBal = (await deployed.USDC.read.balanceOf([deployed.GaslessPaymaster.address]))
+            const smallAmount = parseEther("0.1", "wei")
 
-        //     const smallAmount = parseEther("0.0001", "wei")
+            const redeemShare = await deployed.GaslessPaymaster.read.getFundShare([smallAmount])
 
-        //     expect(await deployed.GaslessPaymaster.read.getFundShare([smallAmount])).to.deep.equal([
-        //         await calculatePrice(smallAmount, deployed.usdcPriceFeeds.address, deployed.bnbPriceFeeds.address), 0n
-        //     ])
+            console.log(await deployed.GaslessPaymaster.read.getFundShare([smallAmount]))
 
-        //     expect(await deployed.GaslessPaymaster.read.getFundShare([deployed.value])).to.deep.equal([
-        //         contractUSDBal - 1n, (deployed.value - await calculatePrice(contractUSDBal, deployed.bnbPriceFeeds.address, deployed.usdcPriceFeeds.address))
-        //     ])
+            console.log({redeemShare, contractUSDBal, userUSDBal})
+
+            await deployed.GaslessPaymaster.write.redeem([smallAmount, user, user])
+
+            expect(await deployed.USDC.read.balanceOf([deployed.user1.account.address])).to.be.equal(userUSDBal + redeemShare[0])
+
+            // expect(await deployed.GaslessPaymaster.read.getFundShare([smallAmount])).to.deep.equal([
+            //     await calculatePrice(smallAmount, usdcPriceFeeds, bnbPriceFeeds), 0n
+            // ])
+
+            // expect(await deployed.GaslessPaymaster.read.getFundShare([deployed.value])).to.deep.equal([
+            //     contractUSDBal - 1n, (deployed.value - await calculatePrice(contractUSDBal, bnbPriceFeeds, usdcPriceFeeds))
+            // ])
             
-        // })
+        })
+
+
+
+        it("Should be able to withdraw USDC and BNB", async ( ) => {
+
+            const deployed = await loadFixture(deployAndSupplyLiquidity)
+
+            const user = deployed.user1.account.address
+
+            const balLpToken = await deployed.GaslessPaymaster.read.balanceOf([user])
+
+            await deployed.GaslessPaymaster.write.redeem([balLpToken, user, user])
+
+            await transfer(deployed)
+
+            const contractUSDBal = (await deployed.USDC.read.balanceOf([deployed.GaslessPaymaster.address]))
+
+            const smallAmount = parseEther("0.0001", "wei")
+
+            expect(await deployed.GaslessPaymaster.read.getFundShare([smallAmount])).to.deep.equal([
+                await calculatePrice(smallAmount, usdcPriceFeeds, bnbPriceFeeds), 0n
+            ])
+
+            expect(await deployed.GaslessPaymaster.read.getFundShare([deployed.value])).to.deep.equal([
+                contractUSDBal - 1n, (deployed.value - await calculatePrice(contractUSDBal, bnbPriceFeeds, usdcPriceFeeds))
+            ])
+            
+        })
 
     })
 
@@ -506,6 +543,8 @@ describe("GaslessPaymaster ", function () {
     
             const iniatlSwaperbalance = await USDC.read.balanceOf([user1.account.address])
     
+            const path = encodePath([usdcAddress, daiAddress], [FeeAmount.HIGH])
+
             const signatures = await createPermit(
                 user1.account.address, 
                 GaslessPaymaster.address, 
@@ -518,14 +557,14 @@ describe("GaslessPaymaster ", function () {
             const tx_signatures = await createSwapPermit(
                 user1.account.address, 
                 user3.account.address,  
-                encodePath([usdcAddress, daiAddress], [FeeAmount.HIGH]),
+                path,
                 amountIn.toString(),
                 amountOutMin.toString(),
                 maxFee.toString(),
                 domainPermit2
             )
-            
 
+            
             // Recipient Balance should be equal to zero before Transfer
             const recipientBalInitial = await DAI.read.balanceOf([user3.account.address])
     
@@ -541,7 +580,93 @@ describe("GaslessPaymaster ", function () {
             ]
 
             const swapData: any = [
-                encodePath([usdcAddress, daiAddress], [FeeAmount.HIGH]),
+                path,
+                user3.account.address,
+                amountIn,
+                amountOutMin,
+                maxFee,
+                tx_signatures.v,
+                tx_signatures.r,
+                tx_signatures.s
+            ]
+    
+            const callerInitialBalance = await publicClient.getBalance({address: caller.account.address})
+    
+            await GaslessPaymaster.write.swapPancakeSwapGasless([permitData, swapData])
+    
+            // Recipient Balance should be equal to amount before after
+            expect(Number(await DAI.read.balanceOf([user3.account.address]))).to.be.closeTo(Number(recipientBalInitial + amountIn), Number(parseEther("1000", "wei")))
+    
+            // Amount sent should be deducted from Sender Balance
+            expect(Number(await USDC.read.balanceOf([user1.account.address]))).to.be.lessThan(Number(iniatlSwaperbalance))
+        
+            // caller balance should reduce
+            expect(Number(await publicClient.getBalance({address: caller.account.address}) - callerInitialBalance)).to.be.gt(Number(await GaslessPaymaster.read.callerFeeAmountInEther()))
+            
+            // check if the contract received the fee
+            expect(Number(await USDC.read.balanceOf([GaslessPaymaster.address]))).to.be.greaterThan(Number(initialTokenBalOfProtocol))    
+
+
+        })
+
+
+
+        it("Should Be able to swap tokens for BNB", async ( ) => {
+
+            const { GaslessPaymaster, user1, user3, publicClient, USDC, DAI, domainPermit, domainPermit2 } = await deployAndFundPancakeSwapPools()
+            
+            const caller = user1
+    
+            const nonces =  await USDC.read.nonces([user1.account.address])
+    
+            const amountIn = parseEther("10", "wei")
+
+            const amountOutMin = 0n; // change later
+    
+            const amountWithFee = amountIn + maxFee
+    
+            const deadline = BigInt("100000000000000")
+    
+            const iniatlSwaperbalance = await USDC.read.balanceOf([user1.account.address])
+    
+            const path = encodePath([usdcAddress, zeroAddress], [FeeAmount.HIGH])
+
+            const signatures = await createPermit(
+                user1.account.address, 
+                GaslessPaymaster.address, 
+                (amountWithFee).toString(),
+                nonces.toString(), 
+                deadline.toString(), 
+                domainPermit
+            )
+    
+            const tx_signatures = await createSwapPermit(
+                user1.account.address, 
+                user3.account.address,  
+                path,
+                amountIn.toString(),
+                amountOutMin.toString(),
+                maxFee.toString(),
+                domainPermit2
+            )
+
+            
+            // Recipient Balance should be equal to zero before Transfer
+            const recipientBalInitial = await DAI.read.balanceOf([user3.account.address])
+    
+            const initialTokenBalOfProtocol = await USDC.read.balanceOf([GaslessPaymaster.address]);
+    
+            const permitData: any = [
+                user1.account.address,
+                amountWithFee,
+                deadline,
+                signatures.v,
+                signatures.r,
+                signatures.s
+            ]
+
+            const swapData: any = [
+                path,
                 user3.account.address,
                 amountIn,
                 amountOutMin,
