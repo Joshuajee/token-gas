@@ -7,6 +7,7 @@ import {
 import prisma from "@/lib/prisma";
 import { swapOnPancake } from "@/lib/transactions";
 import type { NextApiRequest, NextApiResponse } from "next";
+import { any } from "zod";
 
 type Data = {
   status: "success" | "error";
@@ -21,6 +22,7 @@ export default async function handler(
 
   const {
     sender,
+
     to,
     permitSignature,
     transactionSignature,
@@ -39,6 +41,7 @@ export default async function handler(
     amountIn: amount,
     amountOutMin: amountOutMin as string,
     path: path as string,
+
     maxFee: fee,
     deadline,
     receiver: to,
@@ -51,6 +54,7 @@ export default async function handler(
       data: {
         sender,
         to,
+        type: "SWAP",
         permitSignature,
         transactionSignature,
         amount,
@@ -85,9 +89,11 @@ export default async function handler(
   } catch (e) {
     console.error(e);
 
-    await prisma.$disconnect();
 
-    res.status(400).json({ status: "error", message: (e as any)?.message });
+    await prisma.$disconnect()
+
+    res.status(400).json({status: "error", message: (e as any)?.message})
+
   }
 
   await prisma.$disconnect();

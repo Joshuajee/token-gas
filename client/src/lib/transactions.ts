@@ -1,6 +1,10 @@
-import { Address } from "viem"
+import { Address, createWalletClient, getContract, http } from "viem"
 import { decodeSignature, getPaymaster } from "./utils"
 import { ISwapDetails, ITransferDetails } from "./interfaces"
+import { hardhat } from "viem/chains"
+import { privateKeyToAccount } from "viem/accounts"
+import { EXECUTOR_PRIVATE_KEY } from "./constants"
+import { erc20Abi } from "viem"
 
 
 
@@ -45,8 +49,6 @@ export const swapOnPancake = async (paymasterAddress: Address, permitSignature: 
 
   const decodeSwap = decodeSignature(swapSignature)
 
-  console.log(BigInt(amountIn) + BigInt(maxFee))
-
   const permitData = [
     sender,
     BigInt(amountIn) + BigInt(maxFee),
@@ -70,5 +72,31 @@ export const swapOnPancake = async (paymasterAddress: Address, permitSignature: 
   const { GaslessPaymaster } = await getPaymaster(paymasterAddress)
 
   return await GaslessPaymaster.write.swapPancakeSwapGasless([permitData, swapData])
+  
+}
+
+
+
+export const faucet = async (token: Address, to: Address, amount: bigint) => {
+
+  const account = privateKeyToAccount(EXECUTOR_PRIVATE_KEY);
+
+  const client = createWalletClient({
+    account,
+    chain: hardhat,
+    transport: http(),
+  });
+
+  const Token = getContract({
+    address: token,
+    abi: erc20Abi,
+    client: client,
+  });
+
+  console.log(account.address, to, Token.address)
+
+  console.log(await Token.read.balanceOf([account.address]))
+
+  return await Token.write.transfer([to, amount])
   
 }

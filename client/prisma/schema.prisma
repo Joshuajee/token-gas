@@ -19,11 +19,17 @@ enum Status {
   FAILED
 }
 
+enum Type {
+  TRANSFER
+  SWAP
+  UNKNOWN
+}
 model Transactions {
   id                        Int  @id @default(autoincrement())
   sender                    String
   to                        String
   status                    Status @default(PENDING)
+  type                      Type   @default(UNKNOWN)
   permitSignature           String //@unique
   transactionSignature      String //@unique
   amount                    String
@@ -31,7 +37,7 @@ model Transactions {
   nonce                     String
   paymasterAddress          String
   amountOutMin              String? // for swaps
-  path                  String? // for swaps
+  path                      String? // for swaps
   txHash                    String?
   deadline                  String
   message                   String?
