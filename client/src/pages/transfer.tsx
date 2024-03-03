@@ -1,3 +1,4 @@
+
 import { Transaction, columns } from '@/components/Send/Columns'
 import SendForm from '@/components/Send/SendForm'
 import { TransactionRecord } from '@/components/Send/TransactionRecord'
@@ -19,7 +20,7 @@ const fetchTransactions = async () => {
         }
 
         const data = await response.json();
-        console.log(data)
+
         return data.data
 
     } catch (error) {
@@ -31,8 +32,7 @@ const fetchTransactions = async () => {
 }
 
 export default function Transfer() {
-    //@ts-ignore
-    // const [data, setData] = useState<Transaction[]>(mydata);
+
     const { data } = useQuery({
         queryKey: ['initial-users'],
         queryFn: () => fetchTransactions(),

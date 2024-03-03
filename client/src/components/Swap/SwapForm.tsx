@@ -43,6 +43,7 @@ import { FeeAmount } from '@/lib/enums';
 import { ITransactions } from '@/lib/interfaces';
 import { toast } from 'sonner';
 import { RiBearSmileFill } from 'react-icons/ri';
+import { Value } from '@radix-ui/react-select';
 
 
 export default function SwapForm() {
@@ -70,7 +71,6 @@ export default function SwapForm() {
             const maxFee = address && await getSwapMaxFee(depositPaymaster)
             maxFee && setFee(maxFee as any)
         }
-
 
 
         // if (Number(amtToPay) > 0 && tokenToPay && tokenToReceive && tokenToPay != tokenToReceive) {
@@ -215,6 +215,7 @@ export default function SwapForm() {
 
 
     form.watch(getQuote);
+    const val = Number(form.watch('amtToPay')) > 0 ? form.setValue("amtToReceive", (Number(form.watch('amtToPay')) / 100).toString()) : form.setValue("amtToReceive", "")
 
     return (
         <Card className="w-full max-w-[400px] shadow-md">

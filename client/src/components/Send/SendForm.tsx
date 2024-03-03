@@ -250,18 +250,12 @@ export default function SendForm() {
                                         <Input type='number' required step={0.000000000000000001} placeholder="enter amount to be sent" {...field} />
                                     </FormControl>
                                     <FormMessage />
-                                    <FormDescription>
+                                    {
+                                        Number(fee) > 0 &&
                                         <FormDescription>
-                                            {
-                                                Number(fee) > 0 &&
-                                                <p>
-                                                    {`Estimated Fee: ${typeof fee == "bigint" && Number(formatEther(fee)).toFixed(4)}  ${form.getValues().token.toUpperCase()}`}
-                                                </p>
-
-
-                                            }
+                                            {`Estimated Fee: ${typeof fee == "bigint" && Number(formatEther(fee)).toFixed(4)}  ${form.getValues().token.toUpperCase()}`}
                                         </FormDescription>
-                                    </FormDescription>
+                                    }
                                 </FormItem>
                             )}
                         />
