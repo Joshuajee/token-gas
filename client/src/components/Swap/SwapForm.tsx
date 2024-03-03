@@ -73,8 +73,6 @@ export default function SwapForm() {
         }
 
 
-        form.setValue("amtToReceive", "10")
-
         // if (Number(amtToPay) > 0 && tokenToPay && tokenToReceive && tokenToPay != tokenToReceive) {
         //     const path = encodePath([tokenToPay, tokenToReceive], [FeeAmount.HIGH])
         //     console.log("🚀 ~ getQuote ~ path:", path)
@@ -217,6 +215,7 @@ export default function SwapForm() {
 
 
     form.watch(getQuote);
+    const val = Number(form.watch('amtToPay')) > 0 ? form.setValue("amtToReceive", (Number(form.watch('amtToPay')) / 100).toString()) : form.setValue("amtToReceive", "")
 
     return (
         <Card className="w-full max-w-[400px] shadow-md">
