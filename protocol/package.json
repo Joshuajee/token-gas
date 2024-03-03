@@ -8,6 +8,7 @@
     "start": "hardhat node",
     "test": "hardhat --network localhost test",
     "deploy": "hardhat run --network bscTestnet scripts/deploy.ts",
+    "deposit": "hardhat run --network bscTestnet scripts/deposit.ts",
     "deploy-tokens": "hardhat run --network bscTestnet scripts/deployTokens.ts",
     "deploy-local": "hardhat run --network localhost scripts/deployLocal.ts",
     "deploy-local-fork": "hardhat run --network hardhat scripts/deployLocal.ts",
