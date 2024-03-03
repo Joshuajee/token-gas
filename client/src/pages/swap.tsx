@@ -1,4 +1,4 @@
-import SendForm from '@/components/Send/SendForm'
+
 import { SwapTransaction, columns } from '@/components/Swap/Columns'
 import SwapForm from '@/components/Swap/SwapForm'
 import { SwapTransactionRecord } from '@/components/Swap/SwapTransactionRecord'

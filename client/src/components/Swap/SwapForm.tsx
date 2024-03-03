@@ -43,6 +43,7 @@ import { FeeAmount } from '@/lib/enums';
 import { ITransactions } from '@/lib/interfaces';
 import { toast } from 'sonner';
 import { RiBearSmileFill } from 'react-icons/ri';
+import { Value } from '@radix-ui/react-select';
 
 
 export default function SwapForm() {
@@ -72,6 +73,7 @@ export default function SwapForm() {
         }
 
 
+        form.setValue("amtToReceive", "10")
 
         // if (Number(amtToPay) > 0 && tokenToPay && tokenToReceive && tokenToPay != tokenToReceive) {
         //     const path = encodePath([tokenToPay, tokenToReceive], [FeeAmount.HIGH])
