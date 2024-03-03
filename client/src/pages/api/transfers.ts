@@ -41,6 +41,7 @@ export default async function handler(
       data: {
         sender,
         to,
+        type: "TRANSFER",
         permitSignature,
         transactionSignature,
         amount,
@@ -71,8 +72,6 @@ export default async function handler(
       },
     });
   } catch (e) {
-    console.error(e);
-
     await prisma.$disconnect();
 
     res.status(400).json({ status: "error", message: (e as any)?.message });
