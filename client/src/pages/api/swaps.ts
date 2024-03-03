@@ -37,7 +37,6 @@ export default async function handler(
 
   const swapDetails: ISwapDetails = {
     sender,
-    amount: amount,
     amountIn: amount,
     amountOutMin: amountOutMin as string,
     path: path as string,
@@ -89,11 +88,9 @@ export default async function handler(
   } catch (e) {
     console.error(e);
 
+    await prisma.$disconnect();
 
-    await prisma.$disconnect()
-
-    res.status(400).json({status: "error", message: (e as any)?.message})
-
+    res.status(400).json({ status: "error", message: (e as any)?.message });
   }
 
   await prisma.$disconnect();

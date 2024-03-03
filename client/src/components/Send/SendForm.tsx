@@ -251,7 +251,16 @@ export default function SendForm() {
                                     </FormControl>
                                     <FormMessage />
                                     <FormDescription>
-                                        <FormDescription>{Number(fee) > 0 && <p>Estimated Fee: {typeof fee == "bigint" && Number(formatEther(fee)).toFixed(4)} {form.getValues().token.toUpperCase()}</p>}</FormDescription>
+                                        <FormDescription>
+                                            {
+                                                Number(fee) > 0 &&
+                                                <p>
+                                                    {`Estimated Fee: ${typeof fee == "bigint" && Number(formatEther(fee)).toFixed(4)}  ${form.getValues().token.toUpperCase()}`}
+                                                </p>
+
+
+                                            }
+                                        </FormDescription>
                                     </FormDescription>
                                 </FormItem>
                             )}
