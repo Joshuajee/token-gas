@@ -8,12 +8,14 @@ import {
   getContract,
   http,
   keccak256,
+  parseEther,
 } from "viem";
 import { hardhat, bscTestnet } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import { EXECUTOR_PRIVATE_KEY, GAS_PRICE } from "./constants";
+import PoolAbi from "@abi/contracts/interfaces/pancake/IPancakeV3PoolState.sol/IPancakeV3PoolState.json";
 import GaslessPaymasterAbi from "../abi/contracts/GaslessPaymaster.sol/GaslessPaymaster.json";
-import QuoterAbi from "@abi/contracts/interfaces/pancake/IQuoterV2.sol/IQuoterV2.json";
+import FactoryAbi from "@abi/contracts/interfaces/pancake/IPancakeV3Factory.sol/IPancakeV3Factory.json";
 import { FeeAmount } from "./enums";
 
 const ADDR_SIZE = 20;
@@ -276,25 +278,57 @@ export const getTokenShare = async (contract: Address, amount: bigint) => {
   return maxFee;
 };
 
-export const getSwapQuote = async (
-  contract: Address,
-  path: string,
-  amtIn: bigint
-) => {
+export const getSwapQuote = async (pool: Address) => {
+
   const publicClient = createPublicClient({
     chain: getChain(),
     transport: http(),
   });
 
-  const quote = await publicClient.readContract({
-    address: contract,
-    abi: QuoterAbi,
-    functionName: "quoteExactInput",
-    args: [path, amtIn],
+  const slot0 = await publicClient.readContract({
+    address: pool,
+    abi: PoolAbi,
+    functionName: "slot0",
   });
 
-  return quote;
+  const sqrtRatioX96 = (slot0 as any)?.[0] 
+
+  /**
+  sqrtPriceX96 = sqrt(price) * 2 ** 96
+  // divide both sides by 2 ** 96
+  sqrtPriceX96 / (2 ** 96) = sqrt(price)
+  # square both sides
+  (sqrtPriceX96 / (2 ** 96)) ** 2 = price
+  # expand the squared fraction
+  (sqrtPriceX96 ** 2) / ((2 ** 96) ** 2)  = price
+  # multiply the exponents in the denominator to get the final expression
+  */
+
+  // sqrtRatioX96
+
+  const price = (sqrtRatioX96 ** 2n) / (2n ** 192n)// = price
+
+  return price;
 };
+
+
+export const getPool = async (token0: Address, token1: Address) => {
+
+  const publicClient = createPublicClient({
+    chain: getChain(),
+    transport: http(),
+  });
+
+  const pool = await publicClient.readContract({
+    address: "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+    abi: FactoryAbi,
+    functionName: "getPool",
+    args: [token0, token1, FeeAmount.HIGH]
+  });
+
+  return pool;
+};
+
 
 export const decodeSignature = (signature: string) => {
   const pureSig = signature.replace("0x", "");
@@ -352,3 +386,8 @@ export const getChain = () => {
   //if (process.env.NODE_ENV === "development") return hardhat
   return bscTestnet
 }
+
+
+
+console.log(getSwapQuote("0x1Ace7c13109B2B6F7ce83E769c781bF54342966d"))
+//console.log(encodePath(["0x53524045cAC3154B466F379797CD17a5019f4389", "0x38d3B8C94f573C71d04A3f0F4151c37bC29B61C2"], [FeeAmount.HIGH]))

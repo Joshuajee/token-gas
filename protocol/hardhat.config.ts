@@ -39,7 +39,7 @@ const config: HardhatUserConfig = {
       path: "../client/src/abi",
       pretty: false,
       runOnCompile: true,
-      only: ["GaslessFactory", "GaslessPaymaster", "MockERC20WithPermit", "IQuoterV2"],
+      only: ["GaslessFactory", "GaslessPaymaster", "MockERC20WithPermit", "IPancakeV3PoolState", "IPancakeV3Factory"],
     },
   ],
   contractSizer: {

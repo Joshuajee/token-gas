@@ -17,9 +17,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     try {
 
-        const hash = await faucet(token, to, 1n)
+      const hash = await faucet(token, to, parseEther("1000", "wei"))
 
-        res.send({status: "success", message: hash })
+      res.send({status: "success", message: hash })
 
     } catch (e) {
 
