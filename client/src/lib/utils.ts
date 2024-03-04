@@ -13,20 +13,19 @@ import { hardhat, bscTestnet } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import { EXECUTOR_PRIVATE_KEY } from "./constants";
 import GaslessPaymasterAbi from "../abi/contracts/GaslessPaymaster.sol/GaslessPaymaster.json";
-
+import QuoterAbi from "@abi/contracts/interfaces/pancake/IQuoterV2.sol/IQuoterV2.json";
 import { FeeAmount } from "./enums";
 
-
-const ADDR_SIZE = 20
-const FEE_SIZE = 3
-const OFFSET = ADDR_SIZE + FEE_SIZE
-const DATA_SIZE = OFFSET + ADDR_SIZE
+const ADDR_SIZE = 20;
+const FEE_SIZE = 3;
+const OFFSET = ADDR_SIZE + FEE_SIZE;
+const DATA_SIZE = OFFSET + ADDR_SIZE;
 
 export const TICK_SPACINGS: { [amount in FeeAmount]: number } = {
   [FeeAmount.LOW]: 10,
   [FeeAmount.MEDIUM]: 50,
   [FeeAmount.HIGH]: 200,
-}
+};
 
 import MockERC20Abi from "@/abi/contracts/mocks/MockERC20WithPermit.sol/MockERC20WithPermit.json";
 import PaymasterAbi from "@/abi/contracts/GaslessPaymaster.sol/GaslessPaymaster.json";
@@ -115,11 +114,24 @@ export async function createTransferPermit(
   return await signWithSignature(owner, dataToSign);
 }
 
-export async function createSwapPermit(owner: Address, to: Address, path: string, amountIn: String, amountOutMin: string, maxFee: String, domain: IDomain) {
+export async function createSwapPermit(
+  owner: Address,
+  to: Address,
+  path: string,
+  amountIn: String,
+  amountOutMin: string,
+  maxFee: String,
+  domain: IDomain
+) {
+  const pathHash = keccak256(path as Address);
 
-  const pathHash = keccak256(path as Address)
-
-  const permit = { pathHash, to, amountIn, amountOutMinimum: amountOutMin, maxFee }
+  const permit = {
+    pathHash,
+    to,
+    amountIn,
+    amountOutMinimum: amountOutMin,
+    maxFee,
+  };
 
   const Permit = [
     { name: "pathHash", type: "bytes32" },
@@ -127,27 +139,26 @@ export async function createSwapPermit(owner: Address, to: Address, path: string
     { name: "amountIn", type: "uint256" },
     { name: "amountOutMinimum", type: "uint256" },
     { name: "maxFee", type: "uint256" },
-  ]
+  ];
 
   const domainType = [
-      { name: 'name', type: 'string' },
-      { name: 'version', type: 'string' },
-      { name: 'chainId', type: 'uint256' },
-      { name: 'verifyingContract', type: 'address' },
-  ]
+    { name: "name", type: "string" },
+    { name: "version", type: "string" },
+    { name: "chainId", type: "uint256" },
+    { name: "verifyingContract", type: "address" },
+  ];
 
-  const dataToSign : any = {
-      types: {
-          EIP712Domain: domainType,
-          Permit: Permit
-      },
-      domain: domain,
-      primaryType: "Permit",
-      message: permit
-  }
+  const dataToSign: any = {
+    types: {
+      EIP712Domain: domainType,
+      Permit: Permit,
+    },
+    domain: domain,
+    primaryType: "Permit",
+    message: permit,
+  };
 
-  return await signWithSignature(owner, dataToSign)
-
+  return await signWithSignature(owner, dataToSign);
 }
 
 const signWithSignature = async (owner: Address, dataToSign: any) => {
@@ -234,6 +245,56 @@ export const getMaxFee = async (contract: Address) => {
 
   return maxFee;
 };
+export const getSwapMaxFee = async (contract: Address) => {
+  const publicClient = createPublicClient({
+    chain: hardhat,
+    transport: http(),
+  });
+
+  const maxFee = await publicClient.readContract({
+    address: contract,
+    abi: PaymasterAbi,
+    functionName: "estimateFees",
+    args: [1, 10365794880n],
+  });
+
+  return maxFee;
+};
+export const getTokenShare = async (contract: Address, amount: bigint) => {
+  const publicClient = createPublicClient({
+    chain: hardhat,
+    transport: http(),
+  });
+
+  const maxFee = await publicClient.readContract({
+    address: contract,
+    abi: PaymasterAbi,
+    functionName: "getFundShare",
+    args: [amount],
+  });
+
+  return maxFee;
+};
+
+export const getSwapQuote = async (
+  contract: Address,
+  path: string,
+  amtIn: bigint
+) => {
+  const publicClient = createPublicClient({
+    chain: hardhat,
+    transport: http(),
+  });
+
+  const quote = await publicClient.readContract({
+    address: contract,
+    abi: QuoterAbi,
+    functionName: "quoteExactInput",
+    args: [path, amtIn],
+  });
+
+  return quote;
+};
 
 export const decodeSignature = (signature: string) => {
   const pureSig = signature.replace("0x", "");
@@ -264,29 +325,27 @@ export const getPaymaster = async (paymasterAddress: Address) => {
     client: client,
   });
 
-  return {  GaslessPaymaster, client, account }
-}
-
-
+  return { GaslessPaymaster, client, account };
+};
 
 export function encodePath(path: string[], fees: FeeAmount[]): string {
-
   if (path.length != fees.length + 1) {
-      throw new Error('path/fee lengths do not match')
+    throw new Error("path/fee lengths do not match");
   }
 
-  let encoded = '0x'
+  let encoded = "0x";
   for (let i = 0; i < fees.length; i++) {
     // 20 byte encoding of the address
+
     encoded += path[i].slice(2)
     // 3 byte encoding of the fee
     encoded += fees[i].toString(16).padStart(2 * FEE_SIZE, '0')
+
   }
   // encode the final token
-  encoded += path[path.length - 1].slice(2)
+  encoded += path[path.length - 1].slice(2);
 
-  return encoded.toLowerCase()
-
+  return encoded.toLowerCase();
 }
 
 export const getChain = () => {

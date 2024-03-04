@@ -1,4 +1,5 @@
-import React from 'react'
+"use client"
+import React, { useState } from 'react'
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -36,13 +37,16 @@ import { tokens } from '@/lib/tokens';
 import { IDomain, createPermit, createTransferPermit, getMaxFee, getPaymasterDomain, getTokenDomain, getTokenNonce } from '@/lib/utils';
 import { useAccount } from 'wagmi';
 import { paymaster } from '@/lib/paymasters';
-import { Address, parseEther } from 'viem';
+import { Address, formatEther, parseEther } from 'viem';
 import { ITransactions } from '@/lib/interfaces';
 import { toast } from 'sonner';
+import { TbChevronsDownLeft } from 'react-icons/tb';
 
 
 export default function SendForm() {
     const { address } = useAccount()
+    const [fee, setFee] = useState<bigint | null>(null)
+
 
     //define form
     const form = useForm<z.infer<typeof erc20Schema>>({
@@ -81,9 +85,9 @@ export default function SendForm() {
             }
 
             const data = await response.json();
-
+            console.log(data)
             form.reset()
-            toast.success("Transfer complete.")
+            toast.info("token transfer in progress.")
 
         } catch (error) {
             console.error(error);
@@ -167,7 +171,18 @@ export default function SendForm() {
 
     }
 
+    const getQuote = async (data: any) => {
 
+        const { token } = data
+        const selectedPaymaster = (paymaster as any)[token]
+        if (selectedPaymaster) {
+            //* get max fee
+            const maxFee = address && await getMaxFee(selectedPaymaster)
+            maxFee && setFee(maxFee as any)
+        }
+    }
+
+    form.watch(getQuote);
     return (
         <Card className="w-full max-w-[400px] shadow-md">
             <CardHeader>
@@ -235,9 +250,12 @@ export default function SendForm() {
                                         <Input type='number' required step={0.000000000000000001} placeholder="enter amount to be sent" {...field} />
                                     </FormControl>
                                     <FormMessage />
-                                    <FormDescription>
-                                        Gas estimate : 0.01
-                                    </FormDescription>
+                                    {
+                                        Number(fee) > 0 &&
+                                        <FormDescription>
+                                            {`Estimated Fee: ${typeof fee == "bigint" && Number(formatEther(fee)).toFixed(4)}  ${form.getValues().token.toUpperCase()}`}
+                                        </FormDescription>
+                                    }
                                 </FormItem>
                             )}
                         />

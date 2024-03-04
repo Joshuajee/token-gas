@@ -25,8 +25,20 @@ export const faucetSchema = z.object({
 export const uniswapSchema = z.object({
   tokenToPay: z.string().min(3, "Invalid"),
   tokenToReceive: z.string().min(3, "Invalid"),
-  amtToPay: z.number().positive().gt(0, "Invalid amount entered "),
-  amtToReceive: z.number().positive().gt(0, "Invalid amount entered "),
+  amtToPay: z.string().transform((v) => {
+    const number = Number(v) || 0;
+    if (number <= 0) {
+      throw new z.ZodError([
+        {
+          code: ZodIssueCode.custom, // Or use a relevant built-in code
+          message: "Number must be greater than zero.",
+          path: ["amtToPay"],
+        },
+      ]);
+    }
+    return number.toString();
+  }),
+  amtToReceive: z.string().optional(),
 });
 
 export const liquiditySchema = z.object({
