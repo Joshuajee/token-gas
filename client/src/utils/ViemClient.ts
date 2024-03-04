@@ -1,14 +1,15 @@
 "use client";
+import { getChain } from "@/lib/utils";
 import { createPublicClient, http, createWalletClient, custom } from "viem";
 import { localhost, polygonMumbai, polygon } from "viem/chains";
 
 export const publicClient = createPublicClient({
-  chain: localhost,
+  chain: getChain(),
   transport: http(),
 });
 
 export const walletClient = createWalletClient({
-  chain: localhost,
+  chain: getChain(),
   //@ts-ignore
   transport: custom(window.ethereum),
 });

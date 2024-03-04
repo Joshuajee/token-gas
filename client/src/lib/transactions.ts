@@ -1,7 +1,6 @@
 import { Address, createWalletClient, getContract, http } from "viem"
-import { decodeSignature, getPaymaster } from "./utils"
+import { decodeSignature, getChain, getPaymaster } from "./utils"
 import { ISwapDetails, ITransferDetails } from "./interfaces"
-import { hardhat } from "viem/chains"
 import { privateKeyToAccount } from "viem/accounts"
 import { EXECUTOR_PRIVATE_KEY } from "./constants"
 import { erc20Abi } from "viem"
@@ -83,7 +82,7 @@ export const faucet = async (token: Address, to: Address, amount: bigint) => {
 
   const client = createWalletClient({
     account,
-    chain: hardhat,
+    chain: getChain(),
     transport: http(),
   });
 
@@ -93,10 +92,5 @@ export const faucet = async (token: Address, to: Address, amount: bigint) => {
     client: client,
   });
 
-  console.log(account.address, to, Token.address)
-
-  console.log(await Token.read.balanceOf([account.address]))
-
   return await Token.write.transfer([to, amount])
-  
 }

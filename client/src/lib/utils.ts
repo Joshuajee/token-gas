@@ -164,7 +164,7 @@ export async function createSwapPermit(
 const signWithSignature = async (owner: Address, dataToSign: any) => {
   const client = createWalletClient({
     account: owner,
-    chain: hardhat,
+    chain: getChain(),
     transport: custom((window as any)?.ethereum!),
   });
 
@@ -186,7 +186,7 @@ const signWithSignature = async (owner: Address, dataToSign: any) => {
 
 export const getTokenDomain = async (contract: Address, owner: Address) => {
   const publicClient = createPublicClient({
-    chain: hardhat,
+    chain: getChain(),
     transport: http(),
   });
 
@@ -201,7 +201,7 @@ export const getTokenDomain = async (contract: Address, owner: Address) => {
 
 export const getPaymasterDomain = async (contract: Address) => {
   const publicClient = createPublicClient({
-    chain: hardhat,
+    chain: getChain(),
     transport: http(),
   });
 
@@ -216,7 +216,7 @@ export const getPaymasterDomain = async (contract: Address) => {
 
 export const getTokenNonce = async (contract: Address, owner: Address) => {
   const publicClient = createPublicClient({
-    chain: hardhat,
+    chain: getChain(),
     transport: http(),
   });
 
@@ -232,7 +232,7 @@ export const getTokenNonce = async (contract: Address, owner: Address) => {
 
 export const getMaxFee = async (contract: Address) => {
   const publicClient = createPublicClient({
-    chain: hardhat,
+    chain: getChain(),
     transport: http(),
   });
 
@@ -315,7 +315,7 @@ export const getPaymaster = async (paymasterAddress: Address) => {
 
   const client = createWalletClient({
     account,
-    chain: hardhat,
+    chain: getChain(),
     transport: http(),
   });
 
@@ -346,4 +346,9 @@ export function encodePath(path: string[], fees: FeeAmount[]): string {
   encoded += path[path.length - 1].slice(2);
 
   return encoded.toLowerCase();
+}
+
+export const getChain = () => {
+  if (process.env.NODE_ENV === "development") return hardhat
+  return bscTestnet
 }
