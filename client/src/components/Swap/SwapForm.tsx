@@ -215,7 +215,16 @@ export default function SwapForm() {
 
 
     form.watch(getQuote);
-    const val = Number(form.watch('amtToPay')) > 0 ? form.setValue("amtToReceive", (Number(form.watch('amtToPay')) / 100).toString()) : form.setValue("amtToReceive", "")
+    // const val = Number(form.watch('amtToPay')) > 0 ? form.setValue("amtToReceive", (Number(form.watch('amtToPay')) / 100).toString()) : form.setValue("amtToReceive", "")
+
+
+    useEffect(() => {
+        const val = Number(form.watch('amtToPay')) > 0
+            ? (Number(form.watch('amtToPay')) / 100).toString()
+            : "";
+        form.setValue("amtToReceive", val);
+    }, [form.watch('amtToPay')]);
+
 
     return (
         <Card className="w-full max-w-[400px] shadow-md">
@@ -299,8 +308,13 @@ export default function SwapForm() {
                                             </FormControl>
 
                                             <FormMessage />
-                                            <FormDescription>{Number(fee) > 0 && <p>Estimated Fee: {typeof fee == "bigint" && Number(formatEther(fee)).toFixed(4)} {form.getValues().tokenToPay.toUpperCase()}</p>}</FormDescription>
-
+                                            {/* <FormDescription>{Number(fee) > 0 && <p>Estimated Fee: {typeof fee == "bigint" && Number(formatEther(fee)).toFixed(4)} {form.getValues().tokenToPay.toUpperCase()}</p>}</FormDescription> */}
+                                            {
+                                                Number(fee) > 0 &&
+                                                <FormDescription>
+                                                    {`Estimated Fee: ${typeof fee == "bigint" && Number(formatEther(fee)).toFixed(4)}  ${form.getValues().tokenToPay.toUpperCase()}`}
+                                                </FormDescription>
+                                            }
                                         </FormItem>
                                     )}
                                 />

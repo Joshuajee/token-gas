@@ -35,7 +35,7 @@ export default function Swap() {
     //@ts-ignore
     // const [data, setData] = useState<SwapTransaction[]>(myData);
     const { data } = useQuery({
-        queryKey: ['initial-users'],
+        queryKey: ['swap'],
         queryFn: () => fetchTransactions(),
 
     });
