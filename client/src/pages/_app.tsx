@@ -1,3 +1,4 @@
+"use client"
 import { Web3Provider } from "@/providers/ConnectiKitProvider";
 import { ThemeProvider } from "@/providers/ShadcnProvider";
 import "@/styles/globals.css";
