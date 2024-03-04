@@ -84,11 +84,11 @@ export default function SwapForm() {
         // }
 
         if (Number(amtToPay) > 0 && tokenToPay && tokenToReceive && tokenToPay != tokenToReceive) {
-           
+
             // const pool = await getPool((tokens as any)[tokenToPay], (tokens as any)[tokenToReceive])
 
             // if (!pool) return
-            
+
             // const price = await getSwapQuote(pool as Address)
 
             // console.log(pool, price)
@@ -240,7 +240,6 @@ export default function SwapForm() {
 
         async function get() {
 
-
             const from = form.getValues().tokenToPay
 
             const to = form.getValues().tokenToReceive
@@ -250,21 +249,22 @@ export default function SwapForm() {
             const pool = await getPool((tokens as any)[from], (tokens as any)?.[to])
 
             if (!pool) return
-            
+
             const price = await getSwapQuote(pool as Address)
 
             // const val = Number(form.watch('amtToPay')) > 0
             // ? (Number(form.watch('amtToPay')) / 100).toString()
             // : "";
-            
+
             // work
             form.setValue("amtToReceive", String(price * BigInt(Number(form.getValues().amtToPay))));
+
         }
 
         get()
 
 
-    }, [form.getValues().amtToPay]);
+    }, [form.watch('amtToPay')]);
 
 
     return (

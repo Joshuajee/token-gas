@@ -279,7 +279,6 @@ export const getTokenShare = async (contract: Address, amount: bigint) => {
 };
 
 export const getSwapQuote = async (pool: Address) => {
-
   const publicClient = createPublicClient({
     chain: getChain(),
     transport: http(),
@@ -291,7 +290,7 @@ export const getSwapQuote = async (pool: Address) => {
     functionName: "slot0",
   });
 
-  const sqrtRatioX96 = (slot0 as any)?.[0] 
+  const sqrtRatioX96 = (slot0 as any)?.[0];
 
   /**
   sqrtPriceX96 = sqrt(price) * 2 ** 96
@@ -306,14 +305,12 @@ export const getSwapQuote = async (pool: Address) => {
 
   // sqrtRatioX96
 
-  const price = (sqrtRatioX96 ** 2n) / (2n ** 192n)// = price
+  const price = sqrtRatioX96 ** 2n / 2n ** 192n; // = price
 
   return price;
 };
 
-
 export const getPool = async (token0: Address, token1: Address) => {
-
   const publicClient = createPublicClient({
     chain: getChain(),
     transport: http(),
@@ -323,12 +320,11 @@ export const getPool = async (token0: Address, token1: Address) => {
     address: "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
     abi: FactoryAbi,
     functionName: "getPool",
-    args: [token0, token1, FeeAmount.HIGH]
+    args: [token0, token1, FeeAmount.HIGH],
   });
 
   return pool;
 };
-
 
 export const decodeSignature = (signature: string) => {
   const pureSig = signature.replace("0x", "");
@@ -371,10 +367,9 @@ export function encodePath(path: string[], fees: FeeAmount[]): string {
   for (let i = 0; i < fees.length; i++) {
     // 20 byte encoding of the address
 
-    encoded += path[i].slice(2)
+    encoded += path[i].slice(2);
     // 3 byte encoding of the fee
-    encoded += fees[i].toString(16).padStart(2 * FEE_SIZE, '0')
-
+    encoded += fees[i].toString(16).padStart(2 * FEE_SIZE, "0");
   }
   // encode the final token
   encoded += path[path.length - 1].slice(2);
@@ -383,11 +378,9 @@ export function encodePath(path: string[], fees: FeeAmount[]): string {
 }
 
 export const getChain = () => {
-  //if (process.env.NODE_ENV === "development") return hardhat
-  return bscTestnet
-}
+  if (process.env.NODE_ENV === "development") return hardhat;
+  return bscTestnet;
+};
 
-
-
-console.log(getSwapQuote("0x1Ace7c13109B2B6F7ce83E769c781bF54342966d"))
+// console.log(getSwapQuote("0x1Ace7c13109B2B6F7ce83E769c781bF54342966d"));
 //console.log(encodePath(["0x53524045cAC3154B466F379797CD17a5019f4389", "0x38d3B8C94f573C71d04A3f0F4151c37bC29B61C2"], [FeeAmount.HIGH]))
