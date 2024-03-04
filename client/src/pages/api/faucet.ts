@@ -9,27 +9,25 @@ type Data = {
   message: string;
 };
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
-  
-    const body = JSON.parse(req.body) 
-  
-    const { to, token } = body;
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<Data>
+) {
+  // const body = JSON.parse(req.body)
 
-    try {
+  const { to, token } = req.body;
 
-      const hash = await faucet(token, to, parseEther("1000", "wei"))
+  try {
+    const hash = await faucet(token, to, parseEther("1000", "wei"));
 
-      res.send({status: "success", message: hash })
-
-    } catch (e) {
-
-        await prisma.$disconnect();
-
-        res.status(400).json({ status: "error", message: (e as any)?.message });
-    }
-
+    res.send({ status: "success", message: hash });
+  } catch (e) {
     await prisma.$disconnect();
 
+    res.status(400).json({ status: "error", message: (e as any)?.message });
+  }
+
+  await prisma.$disconnect();
 }
 
 export const config = {

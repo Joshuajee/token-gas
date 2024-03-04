@@ -38,6 +38,7 @@ import { useAccount } from 'wagmi';
 import { paymaster } from '@/lib/paymasters';
 import { Address, parseEther } from 'viem';
 import { ITransactions } from '@/lib/interfaces';
+import { toast } from 'sonner';
 
 
 export default function FaucetForm() {
@@ -55,6 +56,34 @@ export default function FaucetForm() {
 
     const onSubmit = async (values: z.infer<typeof faucetSchema>) => {
         console.log("🚀 ~ onSubmit ~ values:", values)
+
+        // * get matching contract addresses
+        const selectedToken = (tokens as any)[values.token]
+        const faucetData = {
+            token: selectedToken,
+            to: address
+        }
+
+        try {
+            const response = await fetch('/api/faucet', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(faucetData),
+            });
+
+            if (!response.ok) {
+                throw new Error('Something went wrong');
+            }
+
+            const data = await response.json();
+            console.log(data)
+            form.reset()
+            toast.info("token transfer in progress.")
+
+        } catch (error) {
+            console.error(error);
+            toast.error("An error occurred during transaction.")
+        }
 
     }
 
