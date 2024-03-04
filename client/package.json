@@ -6,6 +6,7 @@
     "dev": "next dev --experimental-https",
     "dev:normal": "next dev",
     "build": "next build",
+    "build-netlify": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint"
   },

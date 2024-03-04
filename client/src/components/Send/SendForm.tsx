@@ -166,6 +166,7 @@ export default function SendForm() {
                 address && send(address, values.receiver as Address, tokenSignature?.signature, paymasterSignature?.signature, weiValue?.toString(), maxFee.toString(), nonce.toString(), selectedPaymaster, unixTimestampInSeconds.toString())
             }
         } catch (error) {
+            console.warn(error)
             toast.error("An error occurred during transaction.")
         }
 

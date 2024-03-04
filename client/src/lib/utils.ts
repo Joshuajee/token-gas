@@ -349,6 +349,6 @@ export function encodePath(path: string[], fees: FeeAmount[]): string {
 }
 
 export const getChain = () => {
-  if (process.env.NODE_ENV === "development") return hardhat
+  //if (process.env.NODE_ENV === "development") return hardhat
   return bscTestnet
 }
