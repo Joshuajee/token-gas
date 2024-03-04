@@ -11,7 +11,7 @@ import {
 } from "viem";
 import { hardhat, bscTestnet } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
-import { EXECUTOR_PRIVATE_KEY } from "./constants";
+import { EXECUTOR_PRIVATE_KEY, GAS_PRICE } from "./constants";
 import GaslessPaymasterAbi from "../abi/contracts/GaslessPaymaster.sol/GaslessPaymaster.json";
 import QuoterAbi from "@abi/contracts/interfaces/pancake/IQuoterV2.sol/IQuoterV2.json";
 import { FeeAmount } from "./enums";
@@ -240,14 +240,14 @@ export const getMaxFee = async (contract: Address) => {
     address: contract,
     abi: PaymasterAbi,
     functionName: "estimateFees",
-    args: [0, 10365794880n],
+    args: [0, GAS_PRICE],
   });
 
   return maxFee;
 };
 export const getSwapMaxFee = async (contract: Address) => {
   const publicClient = createPublicClient({
-    chain: hardhat,
+    chain: getChain(),
     transport: http(),
   });
 
@@ -255,14 +255,14 @@ export const getSwapMaxFee = async (contract: Address) => {
     address: contract,
     abi: PaymasterAbi,
     functionName: "estimateFees",
-    args: [1, 10365794880n],
+    args: [1, GAS_PRICE],
   });
 
   return maxFee;
 };
 export const getTokenShare = async (contract: Address, amount: bigint) => {
   const publicClient = createPublicClient({
-    chain: hardhat,
+    chain: getChain(),
     transport: http(),
   });
 
@@ -282,7 +282,7 @@ export const getSwapQuote = async (
   amtIn: bigint
 ) => {
   const publicClient = createPublicClient({
-    chain: hardhat,
+    chain: getChain(),
     transport: http(),
   });
 

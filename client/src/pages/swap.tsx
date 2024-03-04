@@ -1,12 +1,11 @@
 
-import { SwapTransaction, columns } from '@/components/Swap/Columns'
+import { columns } from '@/components/Swap/Columns'
 import SwapForm from '@/components/Swap/SwapForm'
 import { SwapTransactionRecord } from '@/components/Swap/SwapTransactionRecord'
 import Nav from '@/components/ui/nav'
-import myData from "@/lib/swapData.json"
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
-import React, { useState } from 'react'
+import React from 'react'
 import { TbArrowBigDownLinesFilled } from "react-icons/tb";
 import { Toaster } from 'sonner'
 
