@@ -37,7 +37,7 @@ import { tokens } from '@/lib/tokens';
 import { format } from 'path';
 import { paymaster } from '@/lib/paymasters';
 import { useAccount } from 'wagmi';
-import { IDomain, createPermit, createSwapPermit, encodePath, getMaxFee, getPaymasterDomain, getSwapMaxFee, getSwapQuote, getTokenDomain, getTokenNonce } from '@/lib/utils';
+import { IDomain, createPermit, createSwapPermit, encodePath, getMaxFee, getPaymasterDomain, getPool, getSwapMaxFee, getSwapQuote, getTokenDomain, getTokenNonce } from '@/lib/utils';
 import { Address, formatEther, parseEther } from 'viem';
 import { FeeAmount } from '@/lib/enums';
 import { ITransactions } from '@/lib/interfaces';
@@ -82,6 +82,24 @@ export default function SwapForm() {
         //     const quote = await getSwapQuote(quoterAddress, path, amountIn)
         //     console.log("🚀 ~ getQuote ~ quote:", quote)
         // }
+
+        if (Number(amtToPay) > 0 && tokenToPay && tokenToReceive && tokenToPay != tokenToReceive) {
+           
+            // const pool = await getPool((tokens as any)[tokenToPay], (tokens as any)[tokenToReceive])
+
+            // if (!pool) return
+            
+            // const price = await getSwapQuote(pool as Address)
+
+            // console.log(pool, price)
+            // const path = encodePath([tokenToPay, tokenToReceive], [FeeAmount.HIGH])
+            // console.log("🚀 ~ getQuote ~ path:", path)
+            // const quoterAddress: Address = process.env.NEXT_PUBLIC_QUOTER_ADDRESS as Address
+            // //* convert to wei
+            // const amountIn = parseEther(amtToPay, "wei")
+            // const quote = await getSwapQuote(quoterAddress, path, amountIn)
+            // console.log("🚀 ~ getQuote ~ quote:", quote)
+        }
 
     }
 
@@ -219,11 +237,34 @@ export default function SwapForm() {
 
 
     useEffect(() => {
-        const val = Number(form.watch('amtToPay')) > 0
-            ? (Number(form.watch('amtToPay')) / 100).toString()
-            : "";
-        form.setValue("amtToReceive", val);
-    }, [form.watch('amtToPay')]);
+
+        async function get() {
+
+
+            const from = form.getValues().tokenToPay
+
+            const to = form.getValues().tokenToReceive
+
+            if (!from || !to) return
+
+            const pool = await getPool((tokens as any)[from], (tokens as any)?.[to])
+
+            if (!pool) return
+            
+            const price = await getSwapQuote(pool as Address)
+
+            // const val = Number(form.watch('amtToPay')) > 0
+            // ? (Number(form.watch('amtToPay')) / 100).toString()
+            // : "";
+            
+            // work
+            form.setValue("amtToReceive", String(price * BigInt(Number(form.getValues().amtToPay))));
+        }
+
+        get()
+
+
+    }, [form.getValues().amtToPay]);
 
 
     return (

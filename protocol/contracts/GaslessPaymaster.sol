@@ -85,7 +85,7 @@ contract GaslessPaymaster is TokenVault, Ownable, ReentrancyGuard, EIP712 {
     uint32 constant public GAS_USED_OFFSET = 900000;
     // fee for transaction caller
     uint public callerFeeAmountInEther = 1 gwei; 
-    uint public poolFeeAmountInToken = 1000 gwei; 
+    uint public poolFeeAmountInToken = 10 gwei; 
 
     uint constant public DECIMAL = 10 ** 18;
 

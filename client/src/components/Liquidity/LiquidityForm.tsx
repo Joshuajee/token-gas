@@ -300,11 +300,11 @@ export default function LiquidityForm() {
                                             <DialogDescription className='w-full'>
                                                 <div className=' w-full py-4 flex flex-col gap-3'>
                                                     <div className='flex justify-between '>
-                                                        <p>BNB</p><p className='font-semibold '>{typeof share[0] == "bigint" && Number(formatEther(share[0])).toFixed(4)}</p>
+                                                        <p>BNB</p><p className='font-semibold '>{typeof share[1] == "bigint" && Number(formatEther(share[1])).toFixed(4)}</p>
                                                     </div>
 
                                                     <div className='flex justify-between'>
-                                                        <p>{form.getValues().pool.toUpperCase()}</p><p className='font-semibold '>{typeof share[1] == "bigint" && Number(formatEther(share[1])).toFixed(4)}</p>
+                                                        <p>{form.getValues().pool.toUpperCase()}</p><p className='font-semibold '>{typeof share[0] == "bigint" && Number(formatEther(share[0])).toFixed(4)}</p>
                                                     </div>
 
                                                 </div>
