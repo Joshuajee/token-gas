@@ -26,7 +26,7 @@ export default function Home() {
   return (
     <main className="h-screen">
       <Nav />
-      <section className="h-[90%] flex flex-col gap-8 justify-center">
+      <section className="h-[90%] px-4 flex flex-col gap-8 justify-center">
         {/* <div className="h-[50%] flex justify-center gap-6 ">
          
           <Card className="w-1/4 py-3" >
