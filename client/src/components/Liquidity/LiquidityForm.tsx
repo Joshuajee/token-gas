@@ -304,7 +304,7 @@ export default function LiquidityForm() {
                                                     </div>
 
                                                     <div className='flex justify-between'>
-                                                        <p>USD</p><p className='font-semibold '>{typeof share[1] == "bigint" && Number(formatEther(share[1])).toFixed(4)}</p>
+                                                        <p>{form.getValues().pool.toUpperCase()}</p><p className='font-semibold '>{typeof share[1] == "bigint" && Number(formatEther(share[1])).toFixed(4)}</p>
                                                     </div>
 
                                                 </div>
