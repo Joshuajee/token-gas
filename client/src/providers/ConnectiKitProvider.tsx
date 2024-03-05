@@ -6,20 +6,17 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
 import { fallback } from "viem";
 
-
 const config = createConfig(
   getDefaultConfig({
     // Your dApps chains
     chains: [bscTestnet, hardhat],
     transports: {
-
       // RPC URL for each chain
       [bscTestnet.id]: fallback([
         http(
-          `https://bsc-testnet.public.blastapi.io`,
+          process.env.NEXT_PUBLIC_BSC_RPC,
         ),
       ]),
-
       [hardhat.id]: fallback([
         http(
           `http://127.0.0.1:8545`,
