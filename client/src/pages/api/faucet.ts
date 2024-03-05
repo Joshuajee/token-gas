@@ -13,11 +13,14 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data>
 ) {
-  // const body = JSON.parse(req.body)
 
-  const { to, token } = req.body;
 
   try {
+
+    const body = req.body
+
+    const { to, token } = body;
+
     const hash = await faucet(token, to, parseEther("1000", "wei"));
 
     res.send({ status: "success", message: hash });
