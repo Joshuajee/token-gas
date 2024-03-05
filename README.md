@@ -32,3 +32,15 @@ Connect with TokenGas and the BSC community. Share your experiences, contribute 
 Experience a new era of simplicity and efficiency in ERC-20 transactions. TokenGas is here to empower BSC users, providing a seamless and user-friendly approach to managing transactions and gas fees.
 
 **Join us in shaping the future of ERC-20 transactions within the Binance Smart Chain ecosystem with TokenGas - Your Gateway to a Seamless BSC Experience!**
+
+## Deployed Smart Contracts on BSC TESTNET
+
+PAYMASTER FACTORY: 0xdC0c61E97FfCD248Dd9B4ebAB4DbB5c8D0b62Da0
+
+USDC PAYMASTER ADDRESS: 0x93Da9a52F3876349162fe7bA1936b0F8127D93F5
+
+DAI PAYMASTER PAYMASTER: 0x1841aea68B3a45f093669f2DD39e4c5546067B65
+
+TEST USDC ADDRESS: 0x53524045cAC3154B466F379797CD17a5019f4389
+
+TEST DAI ADDRESS: 0x38d3B8C94f573C71d04A3f0F4151c37bC29B61C2

@@ -11,6 +11,8 @@ const PRIVATE_KEY = String(process.env.PRIVATE_KEY);
 
 const BSC_RPC = String(process.env.BSC_RPC);
 
+const BSC_SCAN = String(process.env.BSC_SCAN);
+
 const config: HardhatUserConfig = {
   solidity: {
     compilers: [
@@ -62,6 +64,9 @@ const config: HardhatUserConfig = {
       url: BSC_RPC,
       accounts: [PRIVATE_KEY],
     },
+  },
+  etherscan: {
+    apiKey: BSC_SCAN
   },
 };
 
