@@ -45,7 +45,7 @@ export default function Transfer() {
     return (
         <main className='h-screen '>
             <Nav />
-            <div className='h-[90%]  overflow-auto'>
+            <div className='h-[90%]  overflow-auto px-3'>
                 <div className='h-[90vh]  flex items-center justify-center relative ' id='head'>
                     <SendForm />
                     <Link href="#transferrecord" className='absolute bottom-4 right-14'>

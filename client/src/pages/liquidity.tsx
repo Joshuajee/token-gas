@@ -13,7 +13,7 @@ export default function Liquidity() {
     return (
         <main className='h-screen '>
             <Nav />
-            <div className='h-[90%]  '>
+            <div className='h-[90%] px-3 '>
                 <div className='h-full flex items-center justify-center relative'>
                     <LiquidityForm />
                 </div>
