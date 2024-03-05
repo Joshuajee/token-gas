@@ -83,7 +83,7 @@ export default function FaucetForm() {
             const data = await response.json();
             console.log(data)
             form.reset()
-            toast.info("token transfer in progress.")
+            toast.success("Token transferred.")
             setIsLoading(false)
         } catch (error) {
             setIsLoading(false)
