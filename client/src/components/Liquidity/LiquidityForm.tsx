@@ -174,7 +174,10 @@ export default function LiquidityForm() {
         refetchLpData()
         refetchTotalAsset()
 
-    }, [form.getValues])
+    }, [form.getValues(), address])
+
+
+
 
     useEffect(() => {
 
@@ -209,7 +212,6 @@ export default function LiquidityForm() {
         refetchLpData()
         refetchTotalAsset()
     }, [redeemSuccess, redeemError])
-
 
 
     return (
