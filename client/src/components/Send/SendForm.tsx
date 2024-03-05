@@ -46,6 +46,7 @@ import { TbChevronsDownLeft } from 'react-icons/tb';
 export default function SendForm() {
     const { address } = useAccount()
     const [fee, setFee] = useState<bigint | null>(null)
+    const [isLoading, setIsLoading] = useState<boolean>(false)
 
 
     //define form
@@ -88,9 +89,10 @@ export default function SendForm() {
             console.log(data)
             form.reset()
             toast.info("token transfer in progress.")
+            setIsLoading(false)
 
         } catch (error) {
-            console.error(error);
+            setIsLoading(false)
             toast.error("An error occurred during transaction.")
         }
     }
@@ -102,6 +104,8 @@ export default function SendForm() {
         //* convert to wei
         const weiValue = parseEther(values.amount, "wei")
         try {
+            setIsLoading(true)
+
             //* get token domain info
             const tokenDomainInfo: any = address && await getTokenDomain(selectedToken, address)
 
@@ -166,7 +170,7 @@ export default function SendForm() {
                 address && send(address, values.receiver as Address, tokenSignature?.signature, paymasterSignature?.signature, weiValue?.toString(), maxFee.toString(), nonce.toString(), selectedPaymaster, unixTimestampInSeconds.toString())
             }
         } catch (error) {
-            console.warn(error)
+            setIsLoading(false)
             toast.error("An error occurred during transaction.")
         }
 
@@ -184,6 +188,8 @@ export default function SendForm() {
     }
 
     form.watch(getQuote);
+
+
     return (
         <Card className="w-full max-w-[400px] shadow-md">
             <CardHeader>
@@ -263,7 +269,8 @@ export default function SendForm() {
 
 
                         <div className='flex w-full justify-end'>
-                            <Button type="submit">Transfer</Button>
+                            {!isLoading && <Button type="submit">Transfer</Button>}
+                            {isLoading && <Button disabled={true} variant={"secondary"} type="submit">please wait...</Button>}
                         </div>
                     </form>
                 </Form>

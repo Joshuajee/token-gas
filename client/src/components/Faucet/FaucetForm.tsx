@@ -1,3 +1,4 @@
+"use client"
 import React from 'react'
 
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -39,10 +40,13 @@ import { paymaster } from '@/lib/paymasters';
 import { Address, parseEther } from 'viem';
 import { ITransactions } from '@/lib/interfaces';
 import { toast } from 'sonner';
+import { useState } from 'react';
 
 
 export default function FaucetForm() {
     const { address } = useAccount()
+    const [isLoading, setIsLoading] = useState<boolean>(false)
+
 
     //define form
     const form = useForm<z.infer<typeof faucetSchema>>({
@@ -65,6 +69,7 @@ export default function FaucetForm() {
         }
 
         try {
+            setIsLoading(true)
             const response = await fetch('/api/faucet', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -79,9 +84,9 @@ export default function FaucetForm() {
             console.log(data)
             form.reset()
             toast.info("token transfer in progress.")
-
+            setIsLoading(false)
         } catch (error) {
-            console.error(error);
+            setIsLoading(false)
             toast.error("An error occurred during transaction.")
         }
 
@@ -151,7 +156,9 @@ export default function FaucetForm() {
 
 
                         <div className='flex w-full justify-end'>
-                            <Button type="submit" className='w-full'>Claim</Button>
+                            {/* <Button type="submit" className='w-full'>Claim</Button> */}
+                            {!isLoading && <Button className='w-full' type="submit">Claim</Button>}
+                            {isLoading && <Button className="w-full" disabled={true} variant={"secondary"} type="submit">please wait...</Button>}
                         </div>
                     </form>
                 </Form>

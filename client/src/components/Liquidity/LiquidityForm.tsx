@@ -55,6 +55,8 @@ export default function LiquidityForm() {
     const { address } = useAccount()
     const [share, setShares] = useState<BigInt[]>([0n, 0n])
     const [redeemable, setRedeemable] = useState<boolean>(false)
+    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [isLoadingWithdrawal, setIsLoadingWithdrawal] = useState<boolean>(false)
 
     const { writeContract, isSuccess: depositSuccess, isError: depositError } = useWriteContract()
     const { writeContract: writeContractRedeem, isSuccess: redeemSuccess, isError: redeemError } = useWriteContract()
@@ -92,6 +94,8 @@ export default function LiquidityForm() {
             console.log("🚀 ~ onDeposit ~ selectedPaymaster:", selectedPaymaster)
             const weiValue = parseEther(values.amount, "wei")
             try {
+
+                setIsLoading(true)
                 const tx = await writeContract({
                     address: selectedPaymaster,
                     abi: paymasterAbi,
@@ -102,8 +106,9 @@ export default function LiquidityForm() {
 
                 })
 
+
             } catch (error) {
-                console.log("🚀 ~ onDeposit ~ error:", error)
+                setIsLoading(false)
                 toast.error("An error occurred during transaction")
 
             }
@@ -119,6 +124,7 @@ export default function LiquidityForm() {
             const weiValue = parseEther(values.amount, "wei")
             console.log(weiValue)
             try {
+                setIsLoadingWithdrawal(true)
                 const tx = await writeContractRedeem({
                     address: selectedPaymaster,
                     abi: paymasterAbi,
@@ -127,8 +133,9 @@ export default function LiquidityForm() {
 
                 })
 
-            } catch (error) {
 
+            } catch (error) {
+                setIsLoadingWithdrawal(false)
                 toast.error("An error occurred during transaction")
             }
         }
@@ -173,8 +180,10 @@ export default function LiquidityForm() {
 
         if (depositSuccess) {
             toast.success("Deposit complete")
+            setIsLoading(false)
             form.reset()
         } else if (depositError) {
+            setIsLoading(false)
             toast.error("An error occurred during transaction")
         }
 
@@ -189,8 +198,10 @@ export default function LiquidityForm() {
 
         if (redeemSuccess) {
             toast.success("Withdrawal complete")
+            setIsLoadingWithdrawal(false)
             form.reset()
         } else if (redeemError) {
+            setIsLoadingWithdrawal(false)
             toast.error("An error occurred during transaction")
         }
 
@@ -289,8 +300,8 @@ export default function LiquidityForm() {
                             </div>
 
                             <div className='flex w-full gap-3 justify-end'>
-                                {!redeemable && <Button variant={'secondary'} disabled={redeemable} type="button" className='w-1/2'>Redeem</Button>}
-                                {redeemable && <Dialog>
+                                {!redeemable && !isLoadingWithdrawal && <Button variant={'secondary'} disabled={redeemable} type="button" className='w-1/2'>Redeem</Button>}
+                                {redeemable && !isLoadingWithdrawal && <Dialog>
                                     <DialogTrigger asChild>
                                         <Button variant={'secondary'} type="button" onClick={getShare} className='w-1/2'>Redeem</Button>
                                     </DialogTrigger>
@@ -322,7 +333,10 @@ export default function LiquidityForm() {
 
                                     </DialogContent>
                                 </Dialog>}
-                                <Button onClick={handleDepsits} type="submit" className='w-1/2'>Deposit</Button>
+                                {isLoadingWithdrawal && <Button className='w-1/2' disabled={true} variant={"secondary"} type="submit">please wait...</Button>}
+                                {/* <Button onClick={handleDepsits} type="submit" className='w-1/2'>Deposit</Button> */}
+                                {!isLoading && <Button className='w-1/2' onClick={handleDepsits} type="submit">Deposit</Button>}
+                                {isLoading && <Button className='w-1/2' disabled={true} variant={"secondary"} type="submit">please wait...</Button>}
                             </div>
                         </form>
                     </Form>

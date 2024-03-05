@@ -49,6 +49,8 @@ import { Value } from '@radix-ui/react-select';
 export default function SwapForm() {
     const { address } = useAccount()
     const [fee, setFee] = useState<bigint | null>(null)
+    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [minValue, setMinValue] = useState<BigInt>(0n)
 
     //define form
     const form = useForm<z.infer<typeof uniswapSchema>>({
@@ -134,9 +136,9 @@ export default function SwapForm() {
 
             form.reset()
             toast.info("token swap in progress.")
-
+            setIsLoading(false);
         } catch (error) {
-            console.error(error);
+            setIsLoading(false);
             toast.error("An error occurred during transaction.")
         }
     }
@@ -144,7 +146,7 @@ export default function SwapForm() {
     const onSubmit = async (values: z.infer<typeof uniswapSchema>) => {
         // Do something with the form values.
         // ✅ This will be type-safe and validated.
-        console.log(values)
+        console.log(minValue)
 
         const tokenToPay = (tokens as any)[values.tokenToPay]
         const tokenToReceive = (tokens as any)[values.tokenToReceive]
@@ -152,80 +154,89 @@ export default function SwapForm() {
         const depositPaymaster = (paymaster as any)[values.tokenToPay]
         const receptionPaymaster = (paymaster as any)[values.tokenToReceive]
 
-        if (tokenToReceive == tokenToPay) {
-            //* set error for same token selection
-            form.setError("tokenToReceive", {
-                message: "Invalid"
-            })
-        }
-        //* get max fee
-        const maxFee = address && await getSwapMaxFee(depositPaymaster)
+        try {
+            setIsLoading(true)
+            if (tokenToReceive == tokenToPay) {
 
-        //* get nonce
-        const nonce = address && await getTokenNonce(tokenToPay, address)
-        //* convert to wei
-        const amountIn = parseEther(amtToPay, "wei")
-        const amountOutMin = 0n; //! change later
-        const amountWithFee = typeof maxFee == 'bigint' && amountIn + maxFee
+                //* set error for same token selection
+                form.setError("tokenToReceive", {
+                    message: "Invalid"
+                })
+            }
+            //* get max fee
+            const maxFee = address && await getSwapMaxFee(depositPaymaster)
 
-        //* Get the current date and time
-        const now = new Date();
+            //* get nonce
+            const nonce = address && await getTokenNonce(tokenToPay, address)
+            //* convert to wei
+            const amountIn = parseEther(amtToPay, "wei")
+            const amountOutMin = minValue
+            const amountWithFee = typeof maxFee == 'bigint' && amountIn + maxFee
 
-        //* Calculate 1 hour from now
-        const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+            //* Get the current date and time
+            const now = new Date();
 
-        //* Convert the time to Unix timestamp (in seconds)
-        const deadline = Math.floor(oneHourFromNow.getTime() / 1000);
+            //* Calculate 1 hour from now
+            const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
 
-
-        //* get token domain info
-        const tokenDomainInfo: any = address && await getTokenDomain(tokenToPay, address)
-
-        const tokenDomain: IDomain = {
-            name: tokenDomainInfo[1],
-            version: tokenDomainInfo[2],
-            verifyingContract: tokenDomainInfo[4],
-            chainId: Number(tokenDomainInfo[3]),
-        }
-
-        //*sign first permit
-        const tokenSignature = address && await createPermit(
-            address,
-            depositPaymaster,
-            amountWithFee as any,
-            nonce as any,
-            deadline.toString(),
-            tokenDomain
-        )
-
-        //* get paymaster domain
-        const paymasterDomainInfo: any = address && await getPaymasterDomain(depositPaymaster)
-
-        const paymasterDomain: IDomain = {
-            name: paymasterDomainInfo[1],
-            version: paymasterDomainInfo[2],
-            verifyingContract: paymasterDomainInfo[4],
-            chainId: Number(paymasterDomainInfo[3]),
-        }
-
-        const tx_signatures = typeof maxFee == "bigint" && address && await createSwapPermit(
-            address,
-            address,
-            encodePath([tokenToPay, tokenToReceive], [FeeAmount.HIGH]),
-            amountIn.toString(),
-            amountOutMin.toString(),
-            maxFee.toString(),
-            paymasterDomain
-        )
+            //* Convert the time to Unix timestamp (in seconds)
+            const deadline = Math.floor(oneHourFromNow.getTime() / 1000);
 
 
-        //*get path
-        const path = encodePath([tokenToPay, tokenToReceive], [FeeAmount.HIGH])
+            //* get token domain info
+            const tokenDomainInfo: any = address && await getTokenDomain(tokenToPay, address)
 
-        if (typeof nonce === "bigint" && typeof maxFee === "bigint") {
+            const tokenDomain: IDomain = {
+                name: tokenDomainInfo[1],
+                version: tokenDomainInfo[2],
+                verifyingContract: tokenDomainInfo[4],
+                chainId: Number(tokenDomainInfo[3]),
+            }
 
-            //@ts-ignore
-            address && swap(address, address, tokenSignature?.signature, tx_signatures?.signature, amountIn?.toString(), amountOutMin?.toString(), maxFee.toString(), nonce.toString(), depositPaymaster, deadline.toString(), path)
+            //*sign first permit
+            const tokenSignature = address && await createPermit(
+                address,
+                depositPaymaster,
+                amountWithFee as any,
+                nonce as any,
+                deadline.toString(),
+                tokenDomain
+            )
+
+            //* get paymaster domain
+            const paymasterDomainInfo: any = address && await getPaymasterDomain(depositPaymaster)
+
+            const paymasterDomain: IDomain = {
+                name: paymasterDomainInfo[1],
+                version: paymasterDomainInfo[2],
+                verifyingContract: paymasterDomainInfo[4],
+                chainId: Number(paymasterDomainInfo[3]),
+            }
+
+            const tx_signatures = typeof maxFee == "bigint" && address && await createSwapPermit(
+                address,
+                address,
+                encodePath([tokenToPay, tokenToReceive], [FeeAmount.HIGH]),
+                amountIn.toString(),
+                amountOutMin.toString(),
+                maxFee.toString(),
+                paymasterDomain
+            )
+
+
+            //*get path
+            const path = encodePath([tokenToPay, tokenToReceive], [FeeAmount.HIGH])
+
+            if (typeof nonce === "bigint" && typeof maxFee === "bigint") {
+
+                //@ts-ignore
+                address && swap(address, address, tokenSignature?.signature, tx_signatures?.signature, amountIn?.toString(), amountOutMin?.toString(), maxFee.toString(), nonce.toString(), depositPaymaster, deadline.toString(), path)
+            }
+
+
+        } catch (error) {
+            setIsLoading(false)
+            toast.error("An error occurred during transaction.")
         }
 
 
@@ -258,13 +269,15 @@ export default function SwapForm() {
 
             // work
             form.setValue("amtToReceive", String(price * BigInt(Number(form.getValues().amtToPay))));
+            const val = price * BigInt(Number(form.getValues().amtToPay))
+            setMinValue(parseEther((Number(val) * 0.90).toString(), 'wei'))
 
         }
 
         get()
 
 
-    }, [form.watch('amtToPay')]);
+    }, [form.watch('amtToPay'), form.watch('tokenToPay'), form.watch('tokenToReceive')]);
 
 
     return (
@@ -390,7 +403,9 @@ export default function SwapForm() {
                         </div>
 
                         <div className='flex w-full justify-end'>
-                            <Button type="submit">swap</Button>
+                            {/* <Button type="submit">swap</Button> */}
+                            {!isLoading && <Button type="submit">Swap</Button>}
+                            {isLoading && <Button disabled={true} variant={"secondary"} type="submit">please wait...</Button>}
                         </div>
                     </form>
                 </Form>

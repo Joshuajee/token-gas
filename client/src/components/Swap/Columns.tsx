@@ -102,7 +102,7 @@ export const columns: ColumnDef<SwapTransaction>[] = [
         cell: ({ row }) => {
             const status = row.getValue("status")
             //@ts-ignore
-            return <div className={`text-left font-medium ${status == "pending" ? "text-yellow-600" : "text-green-600"}`}>{status}</div>
+            return <div className={`text-left font-medium ${status.toUpperCase() == "PENDING" ? "text-gray-600" : "text-green-600"}`}>{status}</div>
         },
     },
 
