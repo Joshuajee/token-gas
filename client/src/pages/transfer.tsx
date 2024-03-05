@@ -34,7 +34,7 @@ const fetchTransactions = async () => {
 export default function Transfer() {
 
     const { data } = useQuery({
-        queryKey: ['initial-users'],
+        queryKey: ['transfers'],
         queryFn: () => fetchTransactions(),
 
     });
