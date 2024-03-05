@@ -148,7 +148,7 @@ export default function LiquidityForm() {
         const selectedPaymaster = (paymaster as any)[form.getValues().pool]
         if (amt > 0 && selectedPaymaster) {
 
-            setIsLoading(true)
+            setIsLoadingShare(true)
             const weiValue = parseEther(amt.toString(), "wei")
             const share: BigInt[] = await getTokenShare(selectedPaymaster, weiValue) as BigInt[]
             console.log("🚀 ~ getShare ~ share:", share)
