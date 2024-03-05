@@ -1,13 +1,17 @@
 "use client"
-import { Web3Provider } from "@/providers/ConnectiKitProvider";
+//import { Web3Provider } from "@/providers/ConnectiKitProvider";
 import { ThemeProvider } from "@/providers/ShadcnProvider";
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { ReactQueryClientProvider } from '@/providers/ReackQueryProvider'
-import { Inter } from "next/font/google";
 
+import dynamic from 'next/dynamic'
+ 
+const Web3Provider = dynamic(() =>
+  import('./../providers/ConnectiKitProvider').then((mod) => mod.Web3Provider),
+  { ssr: false  }
+)
 
-const inter = Inter({ subsets: ["latin"] });
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
