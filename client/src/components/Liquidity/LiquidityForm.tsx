@@ -57,6 +57,7 @@ export default function LiquidityForm() {
     const [redeemable, setRedeemable] = useState<boolean>(false)
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [isLoadingWithdrawal, setIsLoadingWithdrawal] = useState<boolean>(false)
+    const [isLoadingShare, setIsLoadingShare] = useState<boolean>(false)
 
     const { writeContract, isSuccess: depositSuccess, isError: depositError } = useWriteContract()
     const { writeContract: writeContractRedeem, isSuccess: redeemSuccess, isError: redeemError } = useWriteContract()
@@ -147,10 +148,12 @@ export default function LiquidityForm() {
         const selectedPaymaster = (paymaster as any)[form.getValues().pool]
         if (amt > 0 && selectedPaymaster) {
 
+            setIsLoading(true)
             const weiValue = parseEther(amt.toString(), "wei")
             const share: BigInt[] = await getTokenShare(selectedPaymaster, weiValue) as BigInt[]
             console.log("🚀 ~ getShare ~ share:", share)
             setShares(share)
+            setIsLoadingShare(false)
 
         }
     }
@@ -313,11 +316,15 @@ export default function LiquidityForm() {
                                             <DialogDescription className='w-full'>
                                                 <div className=' w-full py-4 flex flex-col gap-3'>
                                                     <div className='flex justify-between '>
-                                                        <p>BNB</p><p className='font-semibold '>{typeof share[1] == "bigint" && Number(formatEther(share[1])).toFixed(4)}</p>
+                                                        <p>BNB</p>
+                                                        {!isLoadingShare && <p className='font-semibold '>{typeof share[1] == "bigint" && Number(formatEther(share[1])).toFixed(4)}</p>}
+                                                        {isLoadingShare && <p className='font-semibold '>please wait...</p>}
                                                     </div>
 
                                                     <div className='flex justify-between'>
-                                                        <p>{form.getValues().pool.toUpperCase()}</p><p className='font-semibold '>{typeof share[0] == "bigint" && Number(formatEther(share[0])).toFixed(4)}</p>
+                                                        <p>{form.getValues().pool.toUpperCase()}</p>
+                                                        {!isLoadingShare && <p className='font-semibold '>{typeof share[0] == "bigint" && Number(formatEther(share[0])).toFixed(4)}</p>}
+                                                        {isLoadingShare && <p className='font-semibold '>please wait...</p>}
                                                     </div>
 
                                                 </div>
@@ -325,12 +332,12 @@ export default function LiquidityForm() {
                                         </DialogHeader>
                                         <div className="flex items-center  justify-between ">
                                             <p> Click Ok to proceed.</p>
-                                            <DialogClose className=''>
+                                            {!isLoadingShare && <DialogClose className=''>
                                                 <Button onClick={handleWithdrawals} type="submit" size="lg" className="">
                                                     OK
 
                                                 </Button>
-                                            </DialogClose>
+                                            </DialogClose>}
                                         </div>
 
                                     </DialogContent>
