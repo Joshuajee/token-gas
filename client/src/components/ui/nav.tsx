@@ -16,11 +16,14 @@ import {
 import Link from 'next/link'
 import { TiThMenu } from "react-icons/ti";
 <TiThMenu />
+import { useRouter } from 'next/router';
 
 
 export default function Nav() {
 
     const [mobileNav, setMobileNav] = useState<boolean>(false)
+    const router = useRouter();
+    console.log(router.pathname)
 
     return (
         <div className='h-[10%] max-h-[100px] flex  justify-between  items-center px-10 shadow-sm relative'>
@@ -34,29 +37,29 @@ export default function Nav() {
                     <NavigationMenuList>
 
                         <NavigationMenuItem>
-                            <Link href="/transfer" legacyBehavior passHref>
-                                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                            <Link href="/transfer" legacyBehavior passHref >
+                                <NavigationMenuLink className={`${router.pathname == "/transfer" ? "bg-secondary" : ""} ${navigationMenuTriggerStyle()}`}>
                                     Transfer
                                 </NavigationMenuLink>
                             </Link>
                         </NavigationMenuItem>
                         <NavigationMenuItem>
                             <Link href="/swap" legacyBehavior passHref>
-                                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                                <NavigationMenuLink className={`${router.pathname == "/swap" ? "bg-secondary" : ""} ${navigationMenuTriggerStyle()}`}>
                                     Swap
                                 </NavigationMenuLink>
                             </Link>
                         </NavigationMenuItem>
                         <NavigationMenuItem>
                             <Link href="/liquidity" legacyBehavior passHref>
-                                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                                <NavigationMenuLink className={`${router.pathname == "/liquidity" ? "bg-secondary" : ""} ${navigationMenuTriggerStyle()}`}>
                                     Liquidity
                                 </NavigationMenuLink>
                             </Link>
                         </NavigationMenuItem>
                         <NavigationMenuItem>
                             <Link href="/faucet" legacyBehavior passHref>
-                                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                                <NavigationMenuLink className={`${router.pathname == "/faucet" ? "bg-secondary" : ""} ${navigationMenuTriggerStyle()}`}>
                                     Faucet
                                 </NavigationMenuLink>
                             </Link>
