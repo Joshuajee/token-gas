@@ -5,7 +5,6 @@ import { bscTestnet, hardhat } from "wagmi/chains";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
 import { fallback } from "viem";
-import { useEffect, useState } from "react";
 
 
 const config = createConfig(
